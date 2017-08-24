@@ -5,10 +5,9 @@ August 2017
 
 ochang @ Smith & Associates
 **/
-let Matching = (function() {
-    "use strict";
+var Matching = (function() {
 
-    const INST = `
+    var INST = `
         Match each item to the appropriate category. For keyboard only users,
         use the tab key to select an answer from the list and use the enter key to select it.
         Use tab again to select the correct dropzone and then hit the enter key to confirm your answer.
@@ -17,9 +16,9 @@ let Matching = (function() {
     `;
 
     return {
-        prepareQuestion,
-        prepareAnswer,
-        prepareFeedback
+        prepareQuestion: prepareQuestion,
+        prepareAnswer: prepareAnswer,
+        prepareFeedback: prepareFeedback
     };
 
     function prepareQuestion(general, data) {
@@ -39,16 +38,24 @@ let Matching = (function() {
 
     function prepareInstructions(show=true) {
         if (show) {
-            return createElement('p', INST, 'instructions');
+            return createElement('p', INST, {
+                className: 'instructions'
+            });
         }
         return null;
     }
 
-    function createElement(tag, text, className="") {
-        let el = document.createElement(tag);
-        el.innerHTML = text;
-        el.className = className;
+    function createElement(tag, text, options=null) {
+        var el = document.createElement(tag);
+        var text = document.createTextNode(text);
+        el.appendChild(text);
+        if (options && typeof(options) === 'object') {
+            Object.keys(options).forEach(o => {
+                el[o] = options[o];
+            });
+        }
         return el;
     }
+
 
 })();

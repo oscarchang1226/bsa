@@ -1,10 +1,9 @@
 (function(){
-    "use strict";
 
-    let $ = jQuery;
+    var $ = jQuery;
 
     console.log($('.header'));
-    let questionEl = Matching.prepareQuestion({}, matchTypeDummy);
+    var questionEl = Matching.prepareQuestion({}, matchTypeDummy);
     questionEl.forEach(q => {
         $('.header').append(q);
     });
