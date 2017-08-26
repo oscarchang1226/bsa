@@ -1,16 +1,14 @@
-(function(){
+var $ = jQuery;
 
-    var $ = jQuery;
-
-    console.log($('.header'));
-    var questionEl = Matching.prepareQuestion({}, matchTypeDummy);
-    var answerEl = Matching.prepareAnswer({}, matchTypeDummy);
-    questionEl.forEach(q => {
-        $('.header').append(q);
-    });
-    answerEl.forEach(a => {
-        $('.content').append(a);
-    });
-    // console.log(matchTypeDummy);
-
-})();
+var questionEl = Matching.prepareQuestion({}, matchTypeDummy);
+var expected = Matching.getValidationProvider(matchTypeDummy);
+var answerEl = Matching.prepareAnswer({}, matchTypeDummy, {
+    next: 'Matching.checkAnswer(expected)'
+});
+questionEl.forEach(q => {
+    $('.header').append(q);
+});
+answerEl.forEach(a => {
+    $('.content').append(a);
+});
+// console.log(matchTypeDummy);

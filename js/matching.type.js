@@ -15,8 +15,6 @@ var Matching = (function() {
         Use the "Check Answers" button to get your results.
     `;
 
-    var validationProvider = {};
-
     return {
         prepareQuestion: prepareQuestion,
         prepareAnswer: prepareAnswer,
@@ -24,6 +22,7 @@ var Matching = (function() {
         onDragStart: onDragStart,
         onDrop: onDrop,
         onDragOver: onDragOver,
+        getValidationProvider: getValidationProvider,
         checkAnswer: checkAnswer
     };
 
@@ -34,11 +33,11 @@ var Matching = (function() {
         ];
     }
 
-    function prepareAnswer(general, data) {
+    function prepareAnswer(general, data, buttonCallBacks) {
         return [
             prepareQuestionNodes(data.QuestionNodes),
             prepareAnswerNodes(data.AnswerNodes),
-            prepareAnswerActions()
+            prepareAnswerActions(buttonCallBacks)
         ]
     }
 
@@ -111,29 +110,55 @@ var Matching = (function() {
             li.setAttribute('draggable', 'true');
             li.setAttribute('ondragstart', 'Matching.onDragStart(event)');
             container.appendChild(li);
-            if(questionNode.answer) {
-                if(validationProvider[questionNode.answer]) {
-                    validationProvider[questionNode.answer].push(idx);
-                } else {
-                    validationProvider[questionNode.answer] = [idx];
-                }
-            }
         });
         container.setAttribute('ondragover', 'Matching.onDragOver(event)');
         container.setAttribute('ondrop', 'Matching.onDrop(event)');
         return container;
     }
 
-    function prepareAnswerActions() {
+    function prepareAnswerActions(callbacks) {
         var el = createElement('div', null, {className: 'answer-actions'});
         var button = createElement('button', 'Check Answer');
-        button.setAttribute('onclick', 'Matching.checkAnswer()');
+        button.setAttribute('onclick', callbacks.next);
         el.appendChild(button);
         return el;
     }
 
-    function checkAnswer() {
-        console.log(validationProvider);
+    function getValidationProvider(data) {
+        var expected = null;
+        if (data.QuestionNodes) {
+            expected = {};
+            data.QuestionNodes.forEach((questionNode, idx) => {
+                if(questionNode.answer) {
+                    questionNode.id = idx;
+                    if(expected[questionNode.answer]) {
+                        expected[questionNode.answer].push(questionNode);
+                    } else {
+                        expected[questionNode.answer] = [questionNode];
+                    }
+                }
+            });
+        }
+        return expected;
+    }
+
+    function checkAnswer(expected) {
+        var result = {};
+        Object.keys(expected).forEach(k => {
+            var ul = document.getElementById(k);
+            var lis = [...ul.querySelectorAll('li').values()].map(li => {
+                return li.id;
+            });
+            // result.userAnwsers = result.userAnswers || [];
+            // result.userAnswers.push({
+            //     answer: lis
+            // });
+            // result.expectedAnswers = result.expectedAnswers || [];
+            // result.expectedAnswers.push({
+            //     answers: expected[k].map()
+            // });
+        });
+
     }
 
     function onDragStart(ev) {
@@ -144,6 +169,11 @@ var Matching = (function() {
         ev.preventDefault();
         var nodeId = ev.dataTransfer.getData('nodeId');
         var node = document.getElementById(nodeId);
+        var dropzone = ev.currentTarget;
+        if (dropzone.querySelector('ul.dropzone')) {
+            dropzone = dropzone.querySelector('ul.dropzone');
+        }
+
         if (ev.currentTarget.querySelector('ul.dropzone')) {
             ev.currentTarget.querySelector('ul.dropzone').appendChild(node);
         } else {
