@@ -16,36 +16,101 @@ var Matching = (function() {
     `;
 
     return {
-        prepareQuestion: prepareQuestion,
-        prepareAnswer: prepareAnswer,
-        prepareFeedback: prepareFeedback,
+        getQuestion: getQuestion,
+        getAnswer: getAnswer,
+        getFeedback: getFeedback,
         onDragStart: onDragStart,
         onDrop: onDrop,
         onDragOver: onDragOver,
-        getValidationProvider: getValidationProvider,
         checkAnswer: checkAnswer
     };
 
-    function prepareQuestion(general, data) {
+    function getQuestion(general, data) {
         return [
-            prepareInstructions(general.showInstruction),
+            getInstructions(general.showInstruction),
             createElement('p', data.questionText, 'question')
         ];
     }
 
-    function prepareAnswer(general, data, buttonCallBacks) {
+    function getAnswer(general, data, buttons) {
         return [
-            prepareQuestionNodes(data.QuestionNodes),
-            prepareAnswerNodes(data.AnswerNodes),
-            prepareAnswerActions(buttonCallBacks)
+            getQuestionNodes(data.QuestionNodes),
+            getAnswerNodes(data.AnswerNodes),
+            getActionContainer(buttons, 'answer-action')
         ]
     }
 
-    function prepareFeedback(general, data) {
-
+    function getFeedback(general, result) {
+        var feedbacks = result.map(r => {
+            var container = createElement(
+                'div',
+                null,
+                {
+                    className: getFeedbackClassName(
+                        'feedback-container',
+                        r.isCorrect
+                    )
+                }
+            );
+            var title = createElement('h4', r.title);
+            var ul = createElement(
+                'ul',
+                null,
+                {
+                    className: 'feedback-list'
+                }
+            );
+            r.lis.forEach(li => {
+                var liHeader = createElement(
+                    'li',
+                    li.question,
+                    {
+                        className: getFeedbackClassName(
+                            'feedback-item',
+                            li.isCorrect
+                        )
+                    }
+                );
+                if (!li.isCorrect) {
+                    liHeader.appendChild(
+                        createElement(
+                            'span',
+                            '('+li.correctAnswer+')'
+                        )
+                    )
+                }
+                var liText = createElement(
+                    'li',
+                    'feedback: ' + li.feedback
+                );
+                ul.appendChild(liHeader);
+                ul.appendChild(liText);
+            });
+            container.appendChild(title);
+            container.appendChild(ul);
+            return container;
+        });
+        return [...feedbacks, getActionContainer(
+            [
+                {
+                    label: 'Continue',
+                    onclick: 'nextQuestion()',
+                    className: 'next'
+                }
+            ],
+            'feedback-actions'
+        )];
     }
 
-    function prepareInstructions(show=true) {
+    function getFeedbackClassName(c, r) {
+        if (r) {
+            return c + ' correct';
+        } else {
+            return c + ' wrong';
+        }
+    }
+
+    function getInstructions(show=true) {
         if (show) {
             return createElement('p', INST, {
                 className: 'instructions'
@@ -68,7 +133,7 @@ var Matching = (function() {
         return el;
     }
 
-    function prepareAnswerNodes(data) {
+    function getAnswerNodes(data) {
         var container = createElement('div', null, {className: 'answer-nodes-container'});
         // {
         //     "key": "ppv",
@@ -92,7 +157,7 @@ var Matching = (function() {
         return container;
     }
 
-    function prepareQuestionNodes(data) {
+    function getQuestionNodes(data) {
         var container = createElement('ul', null, {className: 'question-nodes-container dropzone'});
         // {
         //     "question" : "The exact cost or price paid under contract for components.",
@@ -116,49 +181,59 @@ var Matching = (function() {
         return container;
     }
 
-    function prepareAnswerActions(callbacks) {
-        var el = createElement('div', null, {className: 'answer-actions'});
-        var button = createElement('button', 'Check Answer');
-        button.setAttribute('onclick', callbacks.next);
-        el.appendChild(button);
+    function getActionContainer(buttons, className) {
+        var el = createElement('div', null, {className: className});
+        buttons.forEach(button => {
+            var buttonEl = createElement('button', button.label, {className: button.className});
+            buttonEl.setAttribute('onclick', button.onclick);
+            el.appendChild(buttonEl);
+        });
         return el;
     }
 
-    function getValidationProvider(data) {
-        var expected = null;
-        if (data.QuestionNodes) {
-            expected = {};
-            data.QuestionNodes.forEach((questionNode, idx) => {
-                if(questionNode.answer) {
-                    questionNode.id = idx;
-                    if(expected[questionNode.answer]) {
-                        expected[questionNode.answer].push(questionNode);
+    function checkAnswer(data, userAnswer) {
+        var all = data.QuestionNodes;
+        var answerLegend = {};
+        data.AnswerNodes.forEach(a => {
+            answerLegend[a.key] = {
+                title: a.title,
+                answers: all.filter(b => {
+                    return b.answer == a.key;
+                })
+            };
+        });
+        var score = data.maxScoreValue || 0;
+        var result = [...document.querySelectorAll('.answer-nodes .dropzone')]
+            .map(ul => {
+                var key = ul.id;
+                var title = ul.previousSibling.innerHTML;
+                var lis = [...ul.querySelectorAll('li')].map(li => {
+                    var temp = all[li.id];
+                    temp.isCorrect = temp.answer == key;
+                    if (temp.isCorrect) {
+                        temp.feedback = temp.correct;
                     } else {
-                        expected[questionNode.answer] = [questionNode];
+                        temp.feedback = temp.wrong;
+                        if (temp.answer) {
+                            temp.correctAnswer = answerLegend[temp.answer].title;
+                        }
+                        score -= temp.scoreValue || 0;
                     }
+                    return temp;
+                });
+                return {
+                    key: key,
+                    title: title,
+                    lis: lis,
+                    isCorrect: lis.reduce((acc, cur) => {
+                        return acc && cur.isCorrect
+                    }, lis.length == answerLegend[key].answers.length)
                 }
             });
-        }
-        return expected;
-    }
-
-    function checkAnswer(expected) {
-        var result = {};
-        Object.keys(expected).forEach(k => {
-            var ul = document.getElementById(k);
-            var lis = [...ul.querySelectorAll('li').values()].map(li => {
-                return li.id;
-            });
-            // result.userAnwsers = result.userAnswers || [];
-            // result.userAnswers.push({
-            //     answer: lis
-            // });
-            // result.expectedAnswers = result.expectedAnswers || [];
-            // result.expectedAnswers.push({
-            //     answers: expected[k].map()
-            // });
-        });
-
+        return {
+            result: result,
+            score: score
+        };
     }
 
     function onDragStart(ev) {
