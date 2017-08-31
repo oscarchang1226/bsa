@@ -7,6 +7,8 @@ ochang @ Smith & Associates
 **/
 var Matching = (function() {
 
+    // TODO: Implement tab functionality
+
     var INST = `
         Match each item to the appropriate category. For keyboard only users,
         use the tab key to select an answer from the list and use the enter key to select it.
@@ -36,11 +38,22 @@ var Matching = (function() {
         return [
             getQuestionNodes(data.QuestionNodes),
             getAnswerNodes(data.AnswerNodes),
-            getActionContainer(buttons, 'answer-action')
+            getActionContainer(buttons, 'answer-actions')
         ]
     }
 
-    function getFeedback(general, result) {
+    function getFeedback(general, result, buttons) {
+        var feedbacks = getFeedbackElements(result.result);
+        return [
+            ...feedbacks,
+            getActionContainer(
+                 buttons,
+                 'feedback-actions'
+             )
+         ];
+    }
+
+    function getFeedbackElements(result) {
         var feedbacks = result.map(r => {
             var container = createElement(
                 'div',
@@ -71,7 +84,7 @@ var Matching = (function() {
                         )
                     }
                 );
-                if (!li.isCorrect) {
+                if (!li.isCorrect && li.correctAnswer) {
                     liHeader.appendChild(
                         createElement(
                             'span',
@@ -81,7 +94,7 @@ var Matching = (function() {
                 }
                 var liText = createElement(
                     'li',
-                    'feedback: ' + li.feedback
+                    'Feedback: ' + li.feedback
                 );
                 ul.appendChild(liHeader);
                 ul.appendChild(liText);
@@ -90,16 +103,7 @@ var Matching = (function() {
             container.appendChild(ul);
             return container;
         });
-        return [...feedbacks, getActionContainer(
-            [
-                {
-                    label: 'Continue',
-                    onclick: 'nextQuestion()',
-                    className: 'next'
-                }
-            ],
-            'feedback-actions'
-        )];
+        return feedbacks;
     }
 
     function getFeedbackClassName(c, r) {
@@ -191,7 +195,8 @@ var Matching = (function() {
         return el;
     }
 
-    function checkAnswer(data, userAnswer) {
+    function checkAnswer(data) {
+        // TODO: Imporve validation
         var all = data.QuestionNodes;
         var answerLegend = {};
         data.AnswerNodes.forEach(a => {
@@ -232,7 +237,8 @@ var Matching = (function() {
             });
         return {
             result: result,
-            score: score
+            score: score,
+            maxScore: data.maxScoreValue
         };
     }
 

@@ -31,7 +31,8 @@ let matchTypeDummy = {
             "type" : "text",
             "color": "default",
             "correct" : "",
-            "wrong" : ""
+            "wrong" : "",
+            "scoreValue": 1
         },
         {
             "question" : "The difference between the base cost/price and the current or market cost.",
@@ -39,7 +40,8 @@ let matchTypeDummy = {
             "type" : "text",
             "color": "default",
             "correct" : "",
-            "wrong" : ""
+            "wrong" : "",
+            "scoreValue": 1
         },
         {
             "question" : "The amount of profit added to the standard cost/price.",
@@ -47,7 +49,8 @@ let matchTypeDummy = {
             "type" : "text",
             "color": "default",
             "correct" : "",
-            "wrong" : ""
+            "wrong" : "",
+            "scoreValue": 1
         },
         {
             "question" : "The price that the market will bear for a component at a particular time.",
@@ -55,7 +58,8 @@ let matchTypeDummy = {
             "type" : "text",
             "color": "default",
             "correct" : "",
-            "wrong" : "This is known as Market Price"
+            "wrong" : "This is known as Market Price",
+            "scoreValue": 1
         }
     ]
 }
