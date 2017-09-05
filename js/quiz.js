@@ -32,17 +32,17 @@ function buildQuiz(jsonFile) {
 }
 
 function getQuiz(idx) {
+    currentQuestion = quizData.Questions[idx];
+    currentModel = getQuestionModel(currentQuestion.questionType);
     if (savedActivity[idx]) {
-        console.log(savedActivity[idx]);
+        document.body.replaceChild(savedActivity[idx], document.querySelector('main'));
     } else {
-        currentQuestion = quizData.Questions[idx];
-        currentModel = getQuestionModel(currentQuestion.questionType);
         if (currentModel) {
             var questionEl = getQuestion(currentModel, quizData, currentQuestion);
             var answerEl = currentModel.getAnswer(
                 quizData,
                 currentQuestion,
-                getAnswerButtons()
+                getAnswerButtons(quizData)
             );
             repopulateContainer(SELECTORS.header, questionEl);
             repopulateContainer(SELECTORS.content, answerEl);
@@ -66,16 +66,77 @@ function checkAnswer() {
         // TODO: proceed with default checking
         console.error('No default checking.');
     }
+}
 
+function getHint() {
+    // TODO: show hint for current question
+    var text = getText(currentQuestion.hintText, 'hint-text');
+    var medias = getHintMedia(currentQuestion.hintMedia);
+    var backdrop = createElement('div', null, {className: 'dialog-backdrop'});
+    var dialog = createElement('div', null, {className: 'dialog'});
+    var closeIcon = getIcon(ICON_NAMES.wrong, 'closeDialog()');
+
+    backdrop.setAttribute('onclick', 'closeDialog()');
+    closeIcon.classList.add('close-dialog-button');
+
+    dialog.appendChild(closeIcon);
+    dialog.appendChild(text);
+    medias.forEach(m => dialog.appendChild(m));
+    backdrop.appendChild(dialog);
+    document.querySelector('main').appendChild(backdrop);
+}
+
+function closeDialog() {
+    console.log(document.querySelector('.dialog-backdrop'));
+}
+
+function getHintMedia(hintMedias) {
+    var media = [];
+    if (Array.isArray(hintMedias)) {
+        hintMedias.forEach(m => {
+            // {
+            //   "type": "image",
+            //   "src": "http://ih.constantcontact.com/fs077/1101742975031/img/201.jpg",
+            //   "description": "A mockingbird.",
+            //   "mediaLink": "http://en.wikipedia.org/wiki/Mockingbird"
+            // }
+            var tag;
+            if (m.type == 'image') {
+                tag = 'img';
+            } else if (m.type == 'video') {
+                tag = 'video';
+            }
+            if (tag) {
+                var mediaItem = document.createElement(tag);
+                mediaItem.setAttribute('src', m.src);
+                mediaItem.setAttribute('alt', m.description);
+                mediaItem.setAttribute('class', 'media-item');
+
+                // TODO: Figure out what to do with media link
+
+                media.push(mediaItem);
+            }
+        });
+    }
+    return media;
+}
+
+function goBack() {
+    saveCurrentQuestion();
+    getQuiz(--currentIndex);
 }
 
 function nextQuestion() {
-    currentIndex++;
-    if (currentIndex === quizData.Questions.length) {
+    saveCurrentQuestion();
+    if (++currentIndex === quizData.Questions.length) {
         getPostQuiz(quizData);
     } else {
         getQuiz(currentIndex);
     }
+}
+
+function saveCurrentQuestion() {
+    savedActivity[currentIndex] = document.querySelector('main').cloneNode(true);
 }
 
 function getQuestionModel(questionType) {
@@ -96,7 +157,6 @@ function getQuestionModel(questionType) {
 }
 
 function getPreQuizButtons() {
-    // TODO: return pre quiz buttons
     return [
         {
             onclick: 'startQuiz()',
@@ -110,14 +170,34 @@ function getPostQuizButtons() {
     // TODO: return post quiz buttons
 }
 
-function getAnswerButtons() {
-    return [
-        {
-            onclick: 'checkAnswer()',
-            label: 'Check Answer',
-            className: 'submit'
-        }
-    ];
+function getAnswerButtons(data) {
+    var checkAnswerButton = {
+        onclick: 'checkAnswer()',
+        label: 'Check Answer',
+        className: 'submit'
+    };
+    var hintButton = {
+        onclick: 'getHint()',
+        label: 'Hint',
+        className: 'hint'
+    };
+    var previousButton = {
+        onclick: 'goBack()',
+        label: 'Go Back',
+        className: 'back'
+    };
+    var buttons = [];
+    if (currentIndex > 0 && data.General.allowPrevious) {
+        buttons.push(previousButton);
+    }
+    if (data.General.showHints &&
+        ((currentQuestion.hintText && currentQuestion.hintText.toUpperCase() != 'NONE') ||
+        (currentQuestion.hintMedia && currentQuestion.hintMedia.toUpperCase() != 'NONE'))
+    ) {
+        buttons.push(hintButton);
+    }
+    buttons.push(checkAnswerButton);
+    return buttons;
 }
 
 function getFeedbackButtons() {
@@ -263,7 +343,10 @@ function getFeedbackClassName(c, r) {
     }
 }
 
-function getIcon(text) {
+function getIcon(text, onclick) {
     var el = createElement('i', text, {className: 'material-icons'});
+    if (onclick) {
+        el.setAttribute('onclick', onclick);
+    }
     return el;
 }
