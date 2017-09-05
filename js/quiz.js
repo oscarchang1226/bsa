@@ -27,7 +27,8 @@ function buildQuiz(jsonFile) {
         var quizHeader = getQuizHeader(quizData);
         setQuizHeader(quizHeader);
         var preQuiz = getPreQuiz(quizData);
-        repopulateContainer(SELECTORS.content, preQuiz);
+        // repopulateContainer(SELECTORS.content, preQuiz);
+        getQuiz(currentIndex);
     });
 }
 
@@ -74,9 +75,10 @@ function getHint() {
     var medias = getHintMedia(currentQuestion.hintMedia);
     var backdrop = createElement('div', null, {className: 'dialog-backdrop'});
     var dialog = createElement('div', null, {className: 'dialog'});
-    var closeIcon = getIcon(ICON_NAMES.wrong, 'closeDialog()');
+    var closeIcon = getIcon(ICON_NAMES.wrong);
 
-    backdrop.setAttribute('onclick', 'closeDialog()');
+    closeIcon.addEventListener('click', closeDialog);
+    backdrop.addEventListener('click', closeDialog);
     closeIcon.classList.add('close-dialog-button');
 
     dialog.appendChild(closeIcon);
@@ -86,8 +88,12 @@ function getHint() {
     document.querySelector('main').appendChild(backdrop);
 }
 
-function closeDialog() {
-    console.log(document.querySelector('.dialog-backdrop'));
+function closeDialog(e) {
+    // prevent nested elements from invoking the handler
+    if (this != e.target) {
+        return;
+    }
+    document.querySelector('.dialog-backdrop').remove();
 }
 
 function getHintMedia(hintMedias) {

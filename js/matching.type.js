@@ -137,6 +137,24 @@ var Matching = (function() {
         return el;
     }
 
+    function getEmptyDropzoneIcon() {
+        var i = document.createElement('i');
+        i.appendChild(document.createTextNode('add'));
+        i.classList.add('material-icons');
+        return i;
+    }
+
+    function getResultIcon(isCorrect) {
+        var el = document.createElement('i');
+        el.classList.add('material-icons', isCorrect? 'correct' : 'wrong');
+        if (isCorrect) {
+            el.appendChild(document.createTextNode('check'));
+        } else {
+            el.appendChild(document.createTextNode('clear'));
+        }
+        return el;
+    }
+
     function getAnswerNodes(data) {
         var container = createElement('div', null, {className: 'answer-nodes-container'});
         // {
@@ -146,14 +164,16 @@ var Matching = (function() {
         //     "src" : "none"
         // }
         data.forEach(answerNode => {
-            var node = createElement('div', null, {className: 'answer-nodes'});
+            var node = createElement('div', null, {className: 'answer-nodes empty'});
             var title = createElement('h4', answerNode.title);
             var ul = createElement('ul', null, {
                 className: 'dropzone',
                 id: answerNode.key
             });
+            var icon = getEmptyDropzoneIcon();
             node.appendChild(title);
             node.appendChild(ul);
+            node.appendChild(icon);
             node.setAttribute('ondragover', 'Matching.onDragOver(event)');
             node.setAttribute('ondrop', 'Matching.onDrop(event)');
             container.appendChild(node);
@@ -162,7 +182,9 @@ var Matching = (function() {
     }
 
     function getQuestionNodes(data) {
-        var container = createElement('ul', null, {className: 'question-nodes-container dropzone'});
+        var container = createElement('div', null, {className: 'question-nodes-container'});
+        var ul = createElement('ul', null, {className: 'dropzone'});
+        var emptyIcon = getEmptyDropzoneIcon();
         // {
         //     "question" : "The exact cost or price paid under contract for components.",
         //     "answer" : "price",
@@ -178,10 +200,15 @@ var Matching = (function() {
             });
             li.setAttribute('draggable', 'true');
             li.setAttribute('ondragstart', 'Matching.onDragStart(event)');
-            container.appendChild(li);
+            ul.appendChild(li);
         });
+        if (ul.children.length === 0) {
+            container.classList.add('empty');
+        }
         container.setAttribute('ondragover', 'Matching.onDragOver(event)');
         container.setAttribute('ondrop', 'Matching.onDrop(event)');
+        container.appendChild(ul);
+        container.appendChild(emptyIcon);
         return container;
     }
 
@@ -207,7 +234,8 @@ var Matching = (function() {
                 })
             };
         });
-        var score = data.maxScoreValue || 0;
+        var score = 0;
+        var isCorrect = true;
         var result = [...document.querySelectorAll('.answer-nodes .dropzone')]
             .map(ul => {
                 var key = ul.id;
@@ -215,6 +243,7 @@ var Matching = (function() {
                 var lis = [...ul.querySelectorAll('li')].map(li => {
                     var temp = all[li.id];
                     temp.isCorrect = temp.answer == key;
+                    isCorrect = isCorrect && temp.isCorrect;
                     if (temp.isCorrect) {
                         temp.feedback = temp.correct;
                     } else {
@@ -222,7 +251,7 @@ var Matching = (function() {
                         if (temp.answer) {
                             temp.correctAnswer = answerLegend[temp.answer].title;
                         }
-                        score -= temp.scoreValue || 0;
+                        score += temp.scoreValue || 0;
                     }
                     return temp;
                 });
@@ -235,6 +264,10 @@ var Matching = (function() {
                     }, lis.length == answerLegend[key].answers.length)
                 }
             });
+        // score = Math.round(score);
+        if (isCorrect) {
+            score = data.maxScoreValue;
+        }
         return {
             result: result,
             score: score,
@@ -250,16 +283,22 @@ var Matching = (function() {
         ev.preventDefault();
         var nodeId = ev.dataTransfer.getData('nodeId');
         var node = document.getElementById(nodeId);
+        var previousParent = node.parentNode;
+        var previousContainer = previousParent.parentNode;
         var dropzone = ev.currentTarget;
         if (dropzone.querySelector('ul.dropzone')) {
             dropzone = dropzone.querySelector('ul.dropzone');
         }
-
-        if (ev.currentTarget.querySelector('ul.dropzone')) {
-            ev.currentTarget.querySelector('ul.dropzone').appendChild(node);
-        } else {
-            ev.currentTarget.appendChild(node);
+        dropzone.parentNode.classList.remove('empty');
+        dropzone.appendChild(node);
+        if (previousParent.children.length === 0) {
+            previousContainer.classList.add('empty');
         }
+        // if (ev.currentTarget.querySelector('ul.dropzone')) {
+        //     ev.currentTarget.querySelector('ul.dropzone').appendChild(node);
+        // } else {
+        //     ev.currentTarget.appendChild(node);
+        // }
     }
 
     function onDragOver(ev) {
