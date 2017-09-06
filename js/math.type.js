@@ -5,11 +5,12 @@ August 2017
 
 ochang @ Smith & Associates
 **/
-var FillInTheBlank = (function(){
+var Arithmetic = (function(){
 
     // TODO: insert feedback; when no feedback dont add element
 
     var INST = `Fill in the blanks with appropriate answers.`;
+    var REGEX = /^[a-zA-Z\?\[\]:;\\<>|()@#$%^&!`"' ]$/;
 
     return {
         getQuestion: getQuestion,
@@ -19,21 +20,20 @@ var FillInTheBlank = (function(){
     };
 
     function getQuestion(general, data) {
-        /**
-        "questionType":"Fill In The Blank",
-        "maxScoreValue": 4,
-        "questionText":"To BLANK1 a BLANK2 is probably the most widely read BLANK3 dealing with race in BLANK4.",
-        "hintText":"Known to mimic the songs of other birds.",
-        "hintMedia":[
-          {
-            "type": "image",
-            "src": "http://ih.constantcontact.com/fs077/1101742975031/img/201.jpg",
-            "description": "A mockingbird.",
-            "mediaLink": "http://en.wikipedia.org/wiki/Mockingbird"
-          }
-        ],
-        "answers": [...]
-        **/
+        // {
+        //   "questionType":"Math",
+        //   "maxScoreValue": 1,
+        //   "questionText":"144 / 12 = BLANK1",
+        //   "hintText":"none",
+        //   "hintMedia":"none",
+        //   "answers": [
+        //     {
+        //       "answerText": "12",
+        //       "feedBack": "none",
+        //       "scoreValue": 1
+        //     }
+        //   ]
+        // }
         return [
             getInstructions(),
             createInputs(data.questionText)
@@ -55,6 +55,7 @@ var FillInTheBlank = (function(){
         el.classList.add('fill-in-the-blanks-question');
         el.querySelectorAll('input[type="text"]').forEach(
             i => {
+                i.addEventListener('keydown', onKeyDown);
                 i.addEventListener('keyup', onKeyUp);
                 i.addEventListener('blur', onBlur)
             }
@@ -69,6 +70,15 @@ var FillInTheBlank = (function(){
         });
         textInput += '/>';
         return textInput;
+    }
+
+    function onKeyDown(e) {
+        if (this != e.target || e.defaultPrevented) {
+            return;
+        }
+        if (e.key.match(REGEX)) {
+            e.preventDefault();
+        }
     }
 
     function onKeyUp(e) {

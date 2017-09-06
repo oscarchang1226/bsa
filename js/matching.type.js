@@ -7,8 +7,6 @@ ochang @ Smith & Associates
 **/
 var Matching = (function() {
 
-    // TODO: Implement tab functionality
-
     var tabIndex = 1;
     var selectedItem;
 
@@ -32,9 +30,11 @@ var Matching = (function() {
     };
 
     function getQuestion(general, data) {
+        var question = createElementWithText('p', data.questionText);
+        question.classList.add('question');
         return [
             getInstructions(general.showInstruction),
-            createElement('p', data.questionText, 'question')
+            question
         ];
     }
 
@@ -119,25 +119,10 @@ var Matching = (function() {
 
     function getInstructions(show=true) {
         if (show) {
-            return createElement('p', INST, {
-                className: 'instructions'
-            });
+            var p = createElementWithText('p', INST);
+            p.classList.add('instructions');
         }
         return null;
-    }
-
-    function createElement(tag, text, options=null) {
-        var el = document.createElement(tag);
-        if (text) {
-            var text = document.createTextNode(text);
-            el.appendChild(text);
-        }
-        if (options && typeof(options) === 'object') {
-            Object.keys(options).forEach(o => {
-                el[o] = options[o];
-            });
-        }
-        return el;
     }
 
     function createElementWithText(tag, text) {
@@ -279,7 +264,8 @@ var Matching = (function() {
         el.classList.add(className);
 
         buttons.forEach(button => {
-            var buttonEl = createElement('button', button.label, {className: button.className});
+            var buttonEl = createElementWithText('button', button.label);
+            buttonEl.classList.add(button.className);
             buttonEl.setAttribute('onclick', button.onclick);
             el.appendChild(buttonEl);
         });

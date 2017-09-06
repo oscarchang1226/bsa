@@ -18,15 +18,18 @@ var AllThatApply = (function() {
         //   "feedBack": "Correct! Jem is Atticus' son.",
         //   "scoreValue": 1
         // }, ...]
-        var div = createElement('div', null, {className: 'answer-container'});
+        var div = document.createElement('div');
+        div.classList.add('answer-container');
         var answers = data.answers.map((a,idx) => {
             var elId = 'checkbox'+idx;
-            var el = createElement('input');
+            var el = document.createElement('input');
             el.setAttribute('type', 'checkbox');
             el.setAttribute('id', elId);
             el.setAttribute('value', idx);
-            var label = createElement('label', a.answerText);
+            var label = document.createElement('label');
+            label.classList.add('checkbox-label');
             label.setAttribute('for', elId);
+            label.appendChild(document.createTextNode(a.answerText));
             div.appendChild(el);
             div.appendChild(label);
             return div;
@@ -48,6 +51,8 @@ var AllThatApply = (function() {
                 correctAnswer = correctAnswer.length > 0?
                     correctAnswer + ', ' + a.answerText : a.answerText;
             }
+            a.selected = false;
+            a.isCorrect = false;
             if (document.getElementById(inputId).checked) {
                 a.selected = true;
                 selected = selected.length > 0?
@@ -68,19 +73,21 @@ var AllThatApply = (function() {
     }
 
     function getFeedback(general, result, buttons) {
-        var correctAnswer = getCorrectAnswer(result);
-        var selectedAnswer = getSelectedAnswer(result);
-        var ul = createElement('ul', null, {className: 'feedback-list'});
+        var correctAnswer = getResult(result, true);
+        var selectedAnswer = getResult(result);
+        var title = document.createElement('h4');
+        title.appendChild(document.createTextNode('Feedback'));
+        var ul = document.createElement('ul');
+        ul.classList.add('feedback-list');
         var feedbacks = result.result.forEach(r => {
-            var liText = createElement(
-                'li',
-                'Feedback: ' + r.feedBack
-            );
+            var liText = document.createElement('li');
+            liText.appendChild(document.createTextNode(r.feedBack));
             ul.appendChild(liText);
         });
         return [
             correctAnswer,
             selectedAnswer,
+            title,
             ul,
             getActionContainer(
                  buttons,
@@ -89,28 +96,32 @@ var AllThatApply = (function() {
         ];
     }
 
-    function getCorrectAnswer(result) {
-        var option = {
-            className: 'feedback-correct-answer'
-        };
-        var el = createElement('p', null, option);
-        var bold = createElement('b', 'Correct Answer: ');
-        var text = document.createTextNode(result.correctAnswer);
+    function getResult(result, correctAnswerFlag) {
+        var attr = getResultAttributes(result, correctAnswerFlag);
+        var el = document.createElement('p');
+        el.classList.add(attr.className);
+        var bold = document.createElement('b');
+        bold.appendChild(document.createTextNode(attr.boldText));
+        var text = document.createTextNode(attr.value);
         el.appendChild(bold);
         el.appendChild(text);
         return el;
     }
 
-    function getSelectedAnswer(result) {
-        var option = {
-            className: 'feedback-selected-answer'
-        };
-        var el = createElement('p', null, option);
-        var bold = createElement('b', 'You selected: ');
-        var text = document.createTextNode(result.selected);
-        el.appendChild(bold);
-        el.appendChild(text);
-        return el;
+    function getResultAttributes(result, getCorrects) {
+        if (getCorrects) {
+            return {
+                className: 'feedback-correct-answer',
+                boldText: 'Correct Answer: ',
+                value: result.correctAnswer
+            }
+        } else {
+            return {
+                className: 'feedback-selected-answer',
+                boldText: 'You selected: ',
+                value: result.selected
+            };
+        }
     }
 
 })();

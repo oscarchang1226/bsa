@@ -1,7 +1,7 @@
 var $ = jQuery;
 
 var savedActivity = [];
-var currentIndex = 0;
+var currentIndex = 4;
 var currentModel = null;
 var currentQuestion = null;
 var quizData = {};
@@ -164,7 +164,7 @@ function getQuestionModel(questionType) {
         case 'Fill In The Blank':
             return FillInTheBlank;
         case 'Math':
-            return FillInTheBlank;
+            return Arithmetic;
         default:
             return null;
     }
@@ -232,7 +232,9 @@ function startQuiz() {
 function repopulateContainer(selector, elList=[]) {
     $(selector).empty();
     elList.forEach(el => {
-        $(selector).append(el);
+        if (el instanceof HTMLElement) {
+            $(selector).append(el);
+        }
     });
 }
 
@@ -253,20 +255,37 @@ function getQuestion(model, general, data) {
 }
 
 function getFeedback(model, general, result) {
-    var title = createElement(
-        'h3',
-        'You scored ' + result.score + '/' + result.maxScore +'!'
-    );
-    if (model && model.getFeedback) {
-        return [
-            title,
-            ...model.getFeedback(general, result, getFeedbackButtons())
-        ];
+    var title = document.createElement('h2');
+    title.appendChild(document.createTextNode('Results: '));
+    title.classList.add('feedback-title');
+
+    var score = document.createElement('h3');
+    var scoreText = 'You scored ' + result.score + '/' + result.maxScore +'!';
+    var icon;
+    if (result.score == result.maxScore) {
+        icon = getIcon(ICON_NAMES.correct);
+        icon.classList.add('correct');
+        scoreText = 'Your answer was correct. +'+result.score;
+    } else if (result.score > 0) {
+        icon = getIcon(ICON_NAMES.partial);
+        icon.classList.add('partial');
+        scoreText = 'Your answer was partially correct. +'+result.score;
     } else {
-        return [
-            title
-        ]
+        icon = getIcon(ICON_NAMES.wrong);
+        icon.classList.add('wrong');
+        scoreText = 'Your answer was incorrect.';
     }
+    score.classList.add('result-score-text');
+    score.appendChild(icon);
+    score.appendChild(document.createTextNode(scoreText));
+
+    var feedback = [title, score];
+    if (model && model.getFeedback) {
+        feedback = feedback.concat(
+            ...model.getFeedback(general, result, getFeedbackButtons())
+        );
+    }
+    return feedback;
 }
 
 function getQuizHeader(data) {

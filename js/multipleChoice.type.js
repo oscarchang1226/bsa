@@ -22,15 +22,18 @@ var MultipleChoice = (function() {
         },
         ...]
         **/
-        var div = createElement('div', null, {className: 'answer-container'});
+        var div = document.createElement('div');
+        div.classList.add('answer-container');
         var answers = data.answers.map((a,idx) => {
             var elId = 'radioButton'+idx;
-            var el = createElement('input');
+            var el = document.createElement('input');
             el.setAttribute('type', 'radio');
             el.setAttribute('id', elId);
             el.setAttribute('value', idx);
             el.setAttribute('name', 'selectedAnswer');
-            var label = createElement('label', a.answerText);
+            var label = document.createElement('label');
+            label.appendChild(document.createTextNode(a.answerText));
+            label.classList.add('radio-label');
             label.setAttribute('for', elId);
             div.appendChild(el);
             div.appendChild(label);
@@ -67,9 +70,9 @@ var MultipleChoice = (function() {
     }
 
     function getFeedback(general, result, buttons) {
-        var correctAnswer = getCorrectAnswer(result);
-        var selectedAnswer = getSelectedAnswer(result);
-        var feedback = getAnswerFeedback(result);
+        var correctAnswer = getResult(result, 'c');
+        var selectedAnswer = getResult(result, 's');
+        var feedback = getResult(result, 'f');
         return [
             correctAnswer,
             selectedAnswer,
@@ -81,28 +84,40 @@ var MultipleChoice = (function() {
         ];
     }
 
-    function getCorrectAnswer(result) {
-        var option = {
-            className: 'feedback-correct-answer'
-        };
-        var el = createElement('p', null, option);
-        var bold = createElement('b', 'Correct Answer: ');
-        var text = document.createTextNode(result.correctAnswer);
+    function getResult(result, isCorrect) {
+        var attr = getResultAttributes(result, isCorrect);
+        var el = document.createElement('p');
+        el.classList.add(attr.className);
+        var bold = document.createElement('b');
+        bold.appendChild(document.createTextNode(attr.boldText));
+        var text = document.createTextNode(attr.value);
         el.appendChild(bold);
         el.appendChild(text);
         return el;
     }
 
-    function getSelectedAnswer(result) {
-        var option = {
-            className: 'feedback-selected-answer'
-        };
-        var el = createElement('p', null, option);
-        var bold = createElement('b', 'You selected: ');
-        var text = document.createTextNode(result.selected);
-        el.appendChild(bold);
-        el.appendChild(text);
-        return el;
+    function getResultAttributes(result, type) {
+        var result;
+        if (type == 'c') {
+            result = {
+                className: 'feedback-correct-answer',
+                boldText: 'Correct Answer: ',
+                value: result.correctAnswer
+            }
+        } else if (type == 's'){
+            result = {
+                className: 'feedback-selected-answer',
+                boldText: 'You selected: ',
+                value: result.selected
+            };
+        } else if (type == 'f') {
+            result = {
+                className: 'feedback-item',
+                boldText: 'Feedback: ',
+                value: result.result.feedBack
+            };
+        }
+        return result;
     }
 
     function getAnswerFeedback(result) {
