@@ -9,6 +9,9 @@ var Matching = (function() {
 
     // TODO: Implement tab functionality
 
+    var tabIndex = 1;
+    var selectedItem;
+
     var INST = `
         Match each item to the appropriate category. For keyboard only users,
         use the tab key to select an answer from the list and use the enter key to select it.
@@ -24,7 +27,8 @@ var Matching = (function() {
         onDragStart: onDragStart,
         onDrop: onDrop,
         onDragOver: onDragOver,
-        checkAnswer: checkAnswer
+        checkAnswer: checkAnswer,
+        resetAll: resetAll
     };
 
     function getQuestion(general, data) {
@@ -35,10 +39,16 @@ var Matching = (function() {
     }
 
     function getAnswer(general, data, buttons) {
+        selectedItem = undefined;
+        var resetAllButton = createElementWithText('button', 'Reset All');
+        resetAllButton.classList.add('reset');
+        resetAllButton.setAttribute('onclick', 'resetAll()');
+        var actionContainer = getActionContainer(buttons, 'answer-actions');
+        actionContainer.insertBefore(resetAllButton, actionContainer.firstChild);
         return [
             getQuestionNodes(data.QuestionNodes),
             getAnswerNodes(data.AnswerNodes),
-            getActionContainer(buttons, 'answer-actions')
+            actionContainer
         ]
     }
 
@@ -55,63 +65,56 @@ var Matching = (function() {
 
     function getFeedbackElements(result) {
         var feedbacks = result.map(r => {
-            var container = createElement(
-                'div',
-                null,
-                {
-                    className: getFeedbackClassName(
-                        'feedback-container',
-                        r.isCorrect
-                    )
-                }
-            );
-            var title = createElement('h4', r.title);
-            var ul = createElement(
-                'ul',
-                null,
-                {
-                    className: 'feedback-list'
-                }
-            );
+
+            // Create feedback container
+            var container = document.createElement('div');
+            container.classList.add('feedback-container', 'matching');
+
+            // Create feedback title
+            var title = createElementWithText('h4', r.title);
+
+            // Create list for feedbacks
+            var ul = document.createElement('ul');
+            ul.classList.add('feedback-list');
+
             r.lis.forEach(li => {
-                var liHeader = createElement(
-                    'li',
-                    li.question,
-                    {
-                        className: getFeedbackClassName(
-                            'feedback-item',
-                            li.isCorrect
-                        )
-                    }
-                );
+
+                // Each feedback will produce two items
+                // header and feedback
+
+                // Create feedback header
+                var resultClass = ['feedback-item', li.isCorrect? 'correct' : 'wrong'];
+                var liHeader = createElementWithText('li', li.question);
+                liHeader.classList.add(...resultClass);
+
+                // Add correct answer to header if is incorrect
                 if (!li.isCorrect && li.correctAnswer) {
-                    liHeader.appendChild(
-                        createElement(
-                            'span',
-                            '('+li.correctAnswer+')'
-                        )
-                    )
+                    var span = createElementWithText('span', '('+li.correctAnswer+')');
+                    liHeader.appendChild(span);
                 }
-                var liText = createElement(
-                    'li',
-                    'Feedback: ' + li.feedback
-                );
+
+                // Create and add result icon to header
+                var icon = getResultIcon(li.isCorrect);
+                liHeader.appendChild(icon);
+
+                // Create feedback
+                var liText = createElementWithText('li', 'Feedback: ' + li.feedback);
+
+                // Add header and feedback to list
                 ul.appendChild(liHeader);
                 ul.appendChild(liText);
             });
+
+            // Add feedback title and feedback list to container
             container.appendChild(title);
             container.appendChild(ul);
+
+            // return feedback container
             return container;
         });
-        return feedbacks;
-    }
 
-    function getFeedbackClassName(c, r) {
-        if (r) {
-            return c + ' correct';
-        } else {
-            return c + ' wrong';
-        }
+        // return list of feedback container
+        return feedbacks;
     }
 
     function getInstructions(show=true) {
@@ -137,6 +140,13 @@ var Matching = (function() {
         return el;
     }
 
+    function createElementWithText(tag, text) {
+        var el = document.createElement(tag);
+        var text = document.createTextNode(text);
+        el.appendChild(text);
+        return el;
+    }
+
     function getEmptyDropzoneIcon() {
         var i = document.createElement('i');
         i.appendChild(document.createTextNode('add'));
@@ -146,7 +156,7 @@ var Matching = (function() {
 
     function getResultIcon(isCorrect) {
         var el = document.createElement('i');
-        el.classList.add('material-icons', isCorrect? 'correct' : 'wrong');
+        el.classList.add('material-icons');
         if (isCorrect) {
             el.appendChild(document.createTextNode('check'));
         } else {
@@ -156,7 +166,10 @@ var Matching = (function() {
     }
 
     function getAnswerNodes(data) {
-        var container = createElement('div', null, {className: 'answer-nodes-container'});
+
+        // Create container for answer dropzones
+        var container = document.createElement('div');
+        container.classList.add('answer-nodes-container');
         // {
         //     "key": "ppv",
         //     "title": "Purchase Price Variance (PPV)",
@@ -164,26 +177,73 @@ var Matching = (function() {
         //     "src" : "none"
         // }
         data.forEach(answerNode => {
-            var node = createElement('div', null, {className: 'answer-nodes empty'});
-            var title = createElement('h4', answerNode.title);
-            var ul = createElement('ul', null, {
-                className: 'dropzone',
-                id: answerNode.key
-            });
+            var node = document.createElement('div');
+            var title = createElementWithText('h4', answerNode.title);
+            var ul = document.createElement('ul');
+            ul.classList.add('dropzone');
+            ul.setAttribute('id', answerNode.key);
             var icon = getEmptyDropzoneIcon();
+            node.classList.add('answer-nodes', 'empty');
             node.appendChild(title);
             node.appendChild(ul);
             node.appendChild(icon);
             node.setAttribute('ondragover', 'Matching.onDragOver(event)');
             node.setAttribute('ondrop', 'Matching.onDrop(event)');
+            node.setAttribute('tabIndex', tabIndex++);
+            node.addEventListener('focus', focus);
+            node.addEventListener('blur', blur);
+            node.addEventListener('mouseleave', blur);
+            node.addEventListener('keyup', dropItem);
             container.appendChild(node);
         });
         return container;
     }
 
+    function focus(e) {
+        e.target.classList.add('shadow');
+    }
+
+    function blur(e) {
+        e.target.classList.remove('shadow');
+    }
+
+    function selectItem(e) {
+        if (this != e.target || e.defaultPrevented) {
+            return;
+        }
+        if (e.key === 'Enter') {
+            if (selectedItem) {
+                if (selectedItem != e.target) {
+                    selectedItem.classList.remove('selected');
+                }
+            }
+            selectedItem = e.target;
+            selectedItem.classList.add('selected');
+        }
+    }
+
+    function dropItem(e) {
+        if (this != e.target || e.defaultPrevented) {
+            return;
+        }
+        if (e.key === 'Enter' && selectedItem) {
+            selectedItem.classList.remove('selected');
+            e.target.classList.remove('empty');
+            var selectedParent = selectedItem.parentNode.parentNode;
+            e.target.querySelector('.dropzone')
+                .appendChild(selectedItem);
+            if (selectedParent.querySelector('.dropzone').children.length === 0) {
+                selectedParent.classList.add('empty');
+            }
+            selectedItem = undefined;
+        }
+    }
+
     function getQuestionNodes(data) {
-        var container = createElement('div', null, {className: 'question-nodes-container'});
-        var ul = createElement('ul', null, {className: 'dropzone'});
+        var container = document.createElement('div');
+        container.classList.add('question-nodes-container');
+        var ul = document.createElement('ul');
+        ul.classList.add('dropzone');
         var emptyIcon = getEmptyDropzoneIcon();
         // {
         //     "question" : "The exact cost or price paid under contract for components.",
@@ -194,12 +254,14 @@ var Matching = (function() {
         //     "wrong" : ""
         // }
         data.forEach((questionNode, idx) => {
-            var li = createElement('li', questionNode.question, {
-                className: 'questionNode',
-                id: idx
-            });
+            var li = createElementWithText('li', questionNode.question);
+            li.classList.add('questionNode');
+            li.setAttribute('id', idx);
             li.setAttribute('draggable', 'true');
             li.setAttribute('ondragstart', 'Matching.onDragStart(event)');
+            li.setAttribute('tabIndex', tabIndex++);
+            li.addEventListener('mouseleave', blur);
+            li.addEventListener('keyup', selectItem);
             ul.appendChild(li);
         });
         if (ul.children.length === 0) {
@@ -212,8 +274,10 @@ var Matching = (function() {
         return container;
     }
 
-    function getActionContainer(buttons, className) {
-        var el = createElement('div', null, {className: className});
+    function getActionContainer(buttons=[], className='') {
+        var el = document.createElement('div');
+        el.classList.add(className);
+
         buttons.forEach(button => {
             var buttonEl = createElement('button', button.label, {className: button.className});
             buttonEl.setAttribute('onclick', button.onclick);
@@ -222,9 +286,33 @@ var Matching = (function() {
         return el;
     }
 
+    function resetAll() {
+        selectedItem = undefined;
+
+        // get all question items(draggable items)
+        var lis = document.querySelectorAll('div.content li');
+
+        // remove empty class from question container
+        document.querySelector('.question-nodes-container').classList.remove('empty');
+
+        // get question list
+        var questionNode = document.querySelector('.question-nodes-container ul.dropzone');
+
+        // add all question items to question list
+        [...lis].forEach(li => questionNode.appendChild(li));
+
+        // get all answer containers
+        var answerContainers = document.querySelectorAll('div.answer-nodes');
+
+        // add empty class to answer containers
+        [...answerContainers].forEach(div => div.classList.add('empty'));
+    }
+
     function checkAnswer(data) {
-        // TODO: Imporve validation
+        // Get all question nodes
         var all = data.QuestionNodes;
+
+        // Generate answer legend
         var answerLegend = {};
         data.AnswerNodes.forEach(a => {
             answerLegend[a.key] = {
@@ -234,36 +322,69 @@ var Matching = (function() {
                 })
             };
         });
+
+        // Keeping track of score and overall correctness
         var score = 0;
-        var isCorrect = true;
+        var isCorrect;
+
+        // Map all list item in answer dropzones and validate answer
         var result = [...document.querySelectorAll('.answer-nodes .dropzone')]
             .map(ul => {
+
+                // Get answer node key
                 var key = ul.id;
+
+                // Get answer node title
                 var title = ul.previousSibling.innerHTML;
-                var lis = [...ul.querySelectorAll('li')].map(li => {
+
+                // Map all default question values with validation and feedbacks
+                var lis = [...ul.children].map(li => {
+
+                    // Get default question values
                     var temp = all[li.id];
+
+                    // Validate answer
                     temp.isCorrect = temp.answer == key;
-                    isCorrect = isCorrect && temp.isCorrect;
+
+                    // Update overall correctness
+                    isCorrect = isCorrect === undefined? temp.isCorrect : isCorrect && temp.isCorrect;
+
+
                     if (temp.isCorrect) {
+                        // Add correct feedback if is correct
                         temp.feedback = temp.correct;
+
+                        // Update score
+                        score += temp.scoreValue || 0;
+
                     } else {
+                        // Add wrong feedback is is incorrect
+                        // Add correct answer if provided
                         temp.feedback = temp.wrong;
                         if (temp.answer) {
                             temp.correctAnswer = answerLegend[temp.answer].title;
                         }
-                        score += temp.scoreValue || 0;
                     }
+
+                    // return default question values with
+                    // feddback, isCorrect, correctAnswer
                     return temp;
                 });
+
+                // return item key, title, correctness, question values with feedback
                 return {
                     key: key,
                     title: title,
                     lis: lis,
+
+                    // Get this answer list correctness only
                     isCorrect: lis.reduce((acc, cur) => {
                         return acc && cur.isCorrect
                     }, lis.length == answerLegend[key].answers.length)
                 }
             });
+
+        // If overall correctness is correct give max score
         // score = Math.round(score);
         if (isCorrect) {
             score = data.maxScoreValue;
@@ -294,11 +415,6 @@ var Matching = (function() {
         if (previousParent.children.length === 0) {
             previousContainer.classList.add('empty');
         }
-        // if (ev.currentTarget.querySelector('ul.dropzone')) {
-        //     ev.currentTarget.querySelector('ul.dropzone').appendChild(node);
-        // } else {
-        //     ev.currentTarget.appendChild(node);
-        // }
     }
 
     function onDragOver(ev) {

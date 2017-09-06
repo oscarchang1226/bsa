@@ -3,7 +3,10 @@
     font-family: 'Hind Siliguri',Helvetica,sans-serif;
     margin: 0;
 }
-
+ul {
+    list-style-type: none;
+    padding: 0;
+}
 p, span, i, b, div, input, label, li {
     font-size: 14px;
 }
@@ -19,7 +22,13 @@ button {
     text-transform: capitalize;
     margin: 0 8px 0 0;
 }
-button:hover {
+button:hover,
+button:focus {
+    box-shadow: 2px 0px 4px 0px rgba(0,0,0,.4), 0px 2px 4px 0px rgba(0,0,0,.4);
+    -moz-box-shadow:  2px 0px 4px 0px rgba(0,0,0,.4), 0px 2px 4px 0px rgba(0,0,0,.4);
+    -webkit-box-shadow:  2px 0px 4px 0px rgba(0,0,0,.4), 0px 2px 4px 0px rgba(0,0,0,.4);
+}
+.shadow {
     box-shadow: 2px 0px 4px 0px rgba(0,0,0,.4), 0px 2px 4px 0px rgba(0,0,0,.4);
     -moz-box-shadow:  2px 0px 4px 0px rgba(0,0,0,.4), 0px 2px 4px 0px rgba(0,0,0,.4);
     -webkit-box-shadow:  2px 0px 4px 0px rgba(0,0,0,.4), 0px 2px 4px 0px rgba(0,0,0,.4);
@@ -105,7 +114,12 @@ ul.dropzone {
     padding: 0;
     border-radius: 4px;
 }
-ul.dropzone li:hover {
+ul.dropzone li {
+    outline: none;
+}
+ul.dropzone li:hover,
+ul.dropzone li:focus,
+ul.dropzone li.selected {
     background-color: rgba(0,0,0,.1);
 }
 div.question-nodes-container,
@@ -125,6 +139,7 @@ div.answer-nodes {
     border-radius: 4px;
     display: flex;
     flex-direction: column;
+    outline: none;
 }
 div.answer-nodes:last-child {
     margin: 0;
@@ -134,6 +149,7 @@ div.answer-nodes h4 {
     border-radius: 4px 4px 0 0;
     background-color: #DD3326;
     color: white;
+    text-align: center;
 }
 div.answer-nodes ul li {
     line-height: 14px;
@@ -165,5 +181,23 @@ div.question-nodes-container.empty i.material-icons {
     margin: auto;
     font-size: 40px;
     width: 40px;
+
+}
+.feedback-container.matching ul.feedback-list {
+    padding: 0 0 0 8px;
+    margin: 0 0 8px 0;
+}
+.feedback-container.matching li.feedback-item {
+    display: flex;
+}
+li.feedback-item i.material-icons {
+    font-weight: 700;
+    margin: 0 4px;
+}
+li.feedback-item.correct i.material-icons {
+    color: green;
+}
+li.feedback-item.wrong i.material-icons {
+    color: red;
 }
 /** End Matching Type Styles **/

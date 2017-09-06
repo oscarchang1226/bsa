@@ -141,6 +141,14 @@ function nextQuestion() {
     }
 }
 
+function resetAll() {
+    if (currentModel.resetAll) {
+        currentModel.resetAll();
+    } else {
+        getQuiz(currentIndex);
+    }
+}
+
 function saveCurrentQuestion() {
     savedActivity[currentIndex] = document.querySelector('main').cloneNode(true);
 }
@@ -179,7 +187,7 @@ function getPostQuizButtons() {
 function getAnswerButtons(data) {
     var checkAnswerButton = {
         onclick: 'checkAnswer()',
-        label: 'Check Answer',
+        label: 'Check Answers',
         className: 'submit'
     };
     var hintButton = {
