@@ -90,6 +90,59 @@
              }
          ]
      },
+     {
+         "questionText": "Determine which leadership style is being demonstrated in each of these pictures.  Drag them to their appropriate styles to match them.  Select “Check Answers” to see how you did. Click any item from the list and drag it into the category it best matches.  Select “Check Answers” to see which ones you got correct and “Reset Incorrect” to pull all of the wrong ones back out.  Select “Reset Activity” to start over.",
+         "questionType":"Matching",
+         "maxScoreValue": 4,
+         "AnswerNodes": [
+             {
+                 "key": "KEY1",
+                 "title": "Autocratic",
+                 "color": "default",
+                 "src": "none"
+             },
+             {
+                  "key": "KEY2",
+                  "title": "Democratic",
+                  "color": "default",
+                  "src": "none"
+            },
+            {
+                "key": "KEY3",
+                "title": "Free-Rein",
+                "color": "default",
+                "src": "none"
+            }
+        ],
+   "QuestionNodes": [{
+      "answer": "KEY1",
+      "type": "image",
+      "color": "default",
+      "correct": "<br><strong>Characteristics of Autocratic Leadership</strong><ul><li>Little or no input from group members</li><li>Leaders make the decisions</li><li>Group leaders dictate all the work methods and processes</li><li>Group members are rarely trusted with decisions or important tasks</li></ol>",
+      "wrong": "<br><strong>Characteristics of Autocratic Leadership</strong><ul><li>Little or no input from group members</li><li>Leaders make the decisions</li><li>Group leaders dictate all the work methods and processes</li><li>Group members are rarely trusted with decisions or important tasks</li></ol>",
+      "centerText": true,
+      "src": "img/autocratic.jpg",
+      "alt": "somone being commanded with a megaphone"
+   }, {
+      "answer": "KEY2",
+      "type": "image",
+      "color": "default",
+      "correct": "<br><strong>Characteristics of Democratic Leadership</strong><ul><li>Group members are encouraged to share ideas and opinions, even though the leader retains the final say over decisions.</li><li>Members of the group feel more engaged in the process.</li><li>Creativity is encouraged and rewarded.</li></ul>",
+      "wrong": "<br><strong>Characteristics of Democratic Leadership</strong><ul><li>Group members are encouraged to share ideas and opinions, even though the leader retains the final say over decisions.</li><li>Members of the group feel more engaged in the process.</li><li>Creativity is encouraged and rewarded.</li></ul>",
+      "centerText": true,
+      "src": "img/democratic.jpg",
+      "alt": "A group collaboration"
+   }, {
+      "answer": "KEY3",
+      "type": "image",
+      "color": "default",
+      "correct": "<br><strong>Characteristics of Free-Rein Leadership</strong><ul><li>Group members operate as they see fit.</li><li>Leader adopts a ‘guide on the side’ role.</li><li>Team work and collaboration are paramount.</li></ul>",
+      "wrong": "<br><strong>Characteristics of Free-Rein Leadership</strong><ul><li>Group members operate as they see fit.</li><li>Leader adopts a ‘guide on the side’ role.</li><li>Team work and collaboration are paramount.</li></ul>",
+      "centerText": true,
+      "src": "img/freeRein.jpg",
+      "alt": "Employees operating without a leader."
+   }]
+     },
     {
       "questionType":"All That Apply",
       "maxScoreValue": 2,
@@ -202,8 +255,8 @@
     },
     {
       "questionType":"Math",
-      "maxScoreValue": 1,
-      "questionText":"144 / 12 = BLANK1",
+      "maxScoreValue": 2,
+      "questionText":"144 / 12 = BLANK1 <br /> 169 / 13 = BLANK2",
       "hintText":"none",
       "hintMedia":"none",
       "answers": [
@@ -211,7 +264,19 @@
           "answerText": "12",
           "feedBack": "none",
           "scoreValue": 1
-        }
+      },
+      {
+        "answerText": "13",
+        "feedBack": "none",
+        "scoreValue": 1,
+        "altAnswers":[
+          {
+            "answerText": "169/13",
+            "feedBack": "none",
+            "scoreValue": 1
+          }
+      ]
+    }
       ]
     }
 

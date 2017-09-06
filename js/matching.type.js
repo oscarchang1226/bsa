@@ -84,7 +84,12 @@ var Matching = (function() {
 
                 // Create feedback header
                 var resultClass = ['feedback-item', li.isCorrect? 'correct' : 'wrong'];
-                var liHeader = createElementWithText('li', li.question);
+                var liHeader;
+                if (li.type == 'image') {
+                    liHeader = createImageElement('li', li);
+                } else {
+                    liHeader = createElementWithText('li', li.question);
+                }
                 liHeader.classList.add(...resultClass);
 
                 // Add correct answer to header if is incorrect
@@ -98,7 +103,16 @@ var Matching = (function() {
                 liHeader.appendChild(icon);
 
                 // Create feedback
-                var liText = createElementWithText('li', 'Feedback: ' + li.feedback);
+                var liText;
+                if (li.feedback.indexOf('</') > -1) {
+                    liText = document.createElement('li');
+                    liText.classList.add('custom');
+                    var fb = createElementWithText('b', 'Feedback: ');
+                    liText.innerHTML = li.feedback;
+                    liText.insertBefore(fb, liText.firstChild);
+                } else {
+                    liText = createElementWithText('li', 'Feedback: ' + li.feedback);
+                }
 
                 // Add header and feedback to list
                 ul.appendChild(liHeader);
@@ -129,6 +143,15 @@ var Matching = (function() {
         var el = document.createElement(tag);
         var text = document.createTextNode(text);
         el.appendChild(text);
+        return el;
+    }
+
+    function createImageElement(tag, node) {
+        var el = document.createElement(tag);
+        var img = document.createElement('img');
+        img.setAttribute('alt', node.alt);
+        img.setAttribute('src', node.src);
+        el.appendChild(img);
         return el;
     }
 
@@ -239,7 +262,12 @@ var Matching = (function() {
         //     "wrong" : ""
         // }
         data.forEach((questionNode, idx) => {
-            var li = createElementWithText('li', questionNode.question);
+            var li;
+            if (questionNode.type == 'image') {
+                li = createImageElement('li', questionNode);
+            } else {
+                li = createElementWithText('li', questionNode.question);
+            }
             li.classList.add('questionNode');
             li.setAttribute('id', idx);
             li.setAttribute('draggable', 'true');

@@ -1,7 +1,7 @@
 var $ = jQuery;
 
 var savedActivity = [];
-var currentIndex = 4;
+var currentIndex = 1;
 var currentModel = null;
 var currentQuestion = null;
 var quizData = {};
