@@ -1,6 +1,6 @@
 /**
 
-Matching Quiz Type
+Math/Arithmetic Quiz Type
 August 2017
 
 ochang @ Smith & Associates

@@ -1,6 +1,6 @@
 /**
 
-Matching Quiz Type
+Multiple Choice Quiz Type
 August 2017
 
 ochang @ Smith & Associates

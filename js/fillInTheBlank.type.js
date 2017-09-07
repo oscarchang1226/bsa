@@ -1,6 +1,6 @@
 /**
 
-Matching Quiz Type
+Fill in the blanks quiz Type
 August 2017
 
 ochang @ Smith & Associates
