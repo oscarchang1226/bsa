@@ -72,7 +72,8 @@ var Ordering = (function (){
     }
 
     function checkAnswer(data) {
-
+        console.log(data);
+        return {};
     }
 
 

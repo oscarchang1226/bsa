@@ -261,3 +261,20 @@ li.feedback-item.wrong i.material-icons {
     margin: 0 4px;
 }
 /** End Fill In The Blanks Type Styles **/
+
+/*****************************************************************************/
+/** Ordering Type Styles **/
+.answer-container select {
+    width: 48px;
+    height: 24px;
+    border-radius: 4px 4px 0 0;
+    background: rgba(255,255,255,1);
+    outline: none;
+    cursor: pointer;
+}
+.answer-container .select-text {
+    width: calc(100% - 48px);
+    padding: 0 0 0 8px;
+    margin: 0 0 8px 0;
+}
+/** End Ordering Type Styles **/
