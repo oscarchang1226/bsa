@@ -1,7 +1,7 @@
 var $ = jQuery;
 
 var savedActivity = [];
-var currentIndex = 1;
+var currentIndex = 0;
 var currentModel = null;
 var currentQuestion = null;
 var quizData = {};
@@ -40,7 +40,8 @@ function getQuiz(idx) {
     } else {
         if (currentModel) {
             var questionEl = getQuestion(currentModel, quizData, currentQuestion);
-            var answerEl = currentModel.getAnswer(
+            var answerEl = getAnswer(
+                currentModel, 
                 quizData,
                 currentQuestion,
                 getAnswerButtons(quizData)
@@ -53,6 +54,14 @@ function getQuiz(idx) {
             console.error('No Model of '+ currentQuestion.questionType);
         }
     }
+}
+
+function getAnswer(model, data, question, buttons) {
+    if (model.getAnswer) {
+        var answerEl = model.getAnswer(data, question, buttons);
+        return answerEl;
+    }
+    return null;
 }
 
 function checkAnswer() {
@@ -165,6 +174,8 @@ function getQuestionModel(questionType) {
             return FillInTheBlank;
         case 'Math':
             return Arithmetic;
+        case 'Ordering':
+            return Ordering;
         default:
             return null;
     }

@@ -28,7 +28,7 @@
       {
         "questionType": "Ordering",
         "maxScoreValue": 1,
-        "questionText": "Order values",
+        "questionText": "Please order these in correct sequence",
         "answers": [
             {
                 "answerText": "Dawn",
@@ -56,6 +56,38 @@
             }
         ]
       },
+      {
+        "questionType": "Ordering",
+        "dragAndDrop": true,
+        "maxScoreValue": 1,
+        "questionText": "Please order these in correct sequence",
+        "answers": [
+            {
+                "answerText": "Dawn",
+                "correct": "Correct!",
+                "wrong": "This is before sunrise",
+                "key": 1
+            },
+            {
+                "answerText": "Sunrise",
+                "correct": "Correct!",
+                "wrong": "This is after dawn",
+                "key": 2
+            },
+            {
+                "answerText": "Dusk",
+                "correct": "Correct!",
+                "wrong": "This is after sunset",
+                "key": 3
+            },
+            {
+                "answerText": "Sunset",
+                "correct": "Correct!",
+                "wrong": "This is before dusk",
+                "key": 4
+            }
+        ]
+    },
       {
          "questionType":"Matching",
          "maxScoreValue": 4,
