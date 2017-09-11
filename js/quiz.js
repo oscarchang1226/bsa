@@ -21,6 +21,7 @@ buildQuiz('data/quiz-data.json');
 function buildQuiz(jsonFile) {
     $.getJSON(jsonFile, data => {
         quizData = data;
+        quizData.Questions = quizData.Questions.filter(q => !q.skip);
         quizData.Questions.forEach(q => {
             savedActivity.push(null);
         });
@@ -41,7 +42,7 @@ function getQuiz(idx) {
         if (currentModel) {
             var questionEl = getQuestion(currentModel, quizData, currentQuestion);
             var answerEl = getAnswer(
-                currentModel, 
+                currentModel,
                 quizData,
                 currentQuestion,
                 getAnswerButtons(quizData)
@@ -196,6 +197,11 @@ function getPostQuizButtons() {
 }
 
 function getAnswerButtons(data) {
+    var resetAllButton = {
+        onclick: 'resetAll()',
+        label: 'Reset All',
+        className: 'reset'
+    };
     var checkAnswerButton = {
         onclick: 'checkAnswer()',
         label: 'Check Answers',
@@ -214,6 +220,9 @@ function getAnswerButtons(data) {
     var buttons = [];
     if (currentIndex > 0 && data.General.allowPrevious) {
         buttons.push(previousButton);
+    }
+    if (currentQuestion.reset) {
+        buttons.push(resetAllButton);
     }
     if (data.General.showHints &&
         ((currentQuestion.hintText && currentQuestion.hintText.toUpperCase() != 'NONE') ||

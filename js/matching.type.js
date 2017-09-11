@@ -40,11 +40,7 @@ var Matching = (function() {
 
     function getAnswer(general, data, buttons) {
         selectedItem = undefined;
-        var resetAllButton = createElementWithText('button', 'Reset All');
-        resetAllButton.classList.add('reset');
-        resetAllButton.setAttribute('onclick', 'resetAll()');
         var actionContainer = getActionContainer(buttons, 'answer-actions');
-        actionContainer.insertBefore(resetAllButton, actionContainer.firstChild);
         return [
             getQuestionNodes(data.QuestionNodes),
             getAnswerNodes(data.AnswerNodes),

@@ -46,17 +46,18 @@
                 "answerText": "Dusk",
                 "correct": "Correct!",
                 "wrong": "This is after sunset",
-                "key": 3
+                "key": 4
             },
             {
                 "answerText": "Sunset",
                 "correct": "Correct!",
                 "wrong": "This is before dusk",
-                "key": 4
+                "key": 3
             }
         ]
       },
       {
+          "skip": true,
         "questionType": "Ordering",
         "dragAndDrop": true,
         "maxScoreValue": 1,
@@ -89,6 +90,7 @@
         ]
     },
       {
+          "reset": true,
          "questionType":"Matching",
          "maxScoreValue": 4,
          "questionText":"Match the Pricing Type to the brief description to test your understanding.",

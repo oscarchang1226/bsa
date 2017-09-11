@@ -3,6 +3,10 @@
     font-family: 'Hind Siliguri',Helvetica,sans-serif;
     margin: 0;
 }
+.flex-wrap {
+    display: flex;
+    flex-wrap: wrap;
+}
 body {
     max-width: 768px;
     margin: 0 auto;
@@ -275,6 +279,29 @@ li.feedback-item.wrong i.material-icons {
 .answer-container .select-text {
     width: calc(100% - 48px);
     padding: 0 0 0 8px;
+    margin: 0 0 8px 0;
+}
+.feedback-answer-value,
+.feedback-answer-label {
+    display: block;
+    font-size: 16px;
+}
+.feedback-answer-value .wrong {
+    color: red;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 0 0 0 4px;
+}
+.feedback-answer-value {
+    width: 40px;
+    font-weight: 700;
+    text-align: center;
+}
+.feedback-answer-label {
+    padding: 0 0 0 4px;
+    width: calc(100% - 40px);
+}
+.feedback-answer-label:last-child {
     margin: 0 0 8px 0;
 }
 /** End Ordering Type Styles **/
