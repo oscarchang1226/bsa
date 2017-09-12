@@ -19,6 +19,168 @@ var ICON_NAMES = {
     partial: 'timelapse'
 };
 
+/**
+    Quiz Pre Functions
+**/
+
+function getQuestionModel(questionType) {
+    switch (questionType) {
+        case 'Matching':
+            return Matching;
+        case 'All That Apply':
+            return AllThatApply;
+        case 'Multiple Choice':
+            return MultipleChoice;
+        case 'Fill In The Blank':
+            return FillInTheBlank;
+        case 'Math':
+            return Arithmetic;
+        case 'Ordering':
+            return Ordering;
+        default:
+            return null;
+    }
+}
+
+function getQuiz(idx) {
+    document.body.scrollTop = 0;
+    currentQuestion = quizData.Questions[idx];
+    currentModel = getQuestionModel(currentQuestion.questionType);
+    if (savedActivity[idx]) {
+        document.body.replaceChild(savedActivity[idx], document.querySelector('main'));
+        addButtonEvents();
+    } else {
+        if (currentModel) {
+            var questionEl = getQuestion(currentModel, quizData, currentQuestion);
+            var answerEl = getAnswer(
+                currentModel,
+                quizData,
+                currentQuestion
+            );
+            repopulateContainer(SELECTORS.header, questionEl);
+            repopulateContainer(SELECTORS.content, answerEl);
+            repopulateContainer(SELECTORS.feedbacks);
+        } else {
+            // TODO: Notification question model not found
+            console.error('No Model of '+ currentQuestion.questionType);
+        }
+    }
+}
+
+function startQuiz() {
+    currentIndex = 0;
+    getQuiz(currentIndex);
+}
+
+/**
+    Button Providers
+*/
+
+function getPreQuizButtons() {
+    var startQuizButton = {
+            label: 'Start Quiz',
+            className: 'start-quiz'
+        },
+        buttons = [],
+        button;
+    button = document.createElement('button');
+    button.classList.add(startQuizButton.className);
+    button.appendChild(document.createTextNode(startQuizButton.label));
+    button.addEventListener('click', getButtonEvent(startQuizButton.className));
+    buttons.push(button);
+    return buttons;
+}
+
+function getPostQuizButtons() {
+    // TODO: return post quiz buttons
+}
+
+function getAnswerButtons(data) {
+    var resetAllButton = {
+            label: 'Reset All',
+            className: 'reset'
+        },
+        checkAnswerButton = {
+            label: 'Check Answers',
+            className: 'submit'
+        },
+        hintButton = {
+            label: 'Hint',
+            className: 'hint'
+        },
+        previousButton = {
+            label: 'Go Back',
+            className: 'back'
+        },
+        buttons = [],
+        button;
+    if (currentIndex > 0 && data.General.allowPrevious) {
+        buttons.push(previousButton);
+    }
+    if (currentQuestion.reset) {
+        buttons.push(resetAllButton);
+    }
+    if (data.General.showHints &&
+        ((currentQuestion.hintText && currentQuestion.hintText.toUpperCase() !== 'NONE') ||
+        (currentQuestion.hintMedia && currentQuestion.hintMedia.toUpperCase() !== 'NONE'))
+    ) {
+        buttons.push(hintButton);
+    }
+    buttons.push(checkAnswerButton);
+    buttons = buttons.map(function (b) {
+        button = document.createElement('button');
+        button.classList.add(b.className);
+        button.appendChild(document.createTextNode(b.label));
+        button.addEventListener('click', getButtonEvent(b.className));
+        return button;
+    });
+    return buttons;
+}
+
+function getFeedbackButtons() {
+    var contButton = {
+            label: 'Continue',
+            className: 'next'
+        },
+        buttons = [],
+        button;
+    button = document.createElement('button');
+    button.classList.add(contButton.className);
+    button.appendChild(document.createTextNode(contButton.label));
+    button.addEventListener('click', getButtonEvent(contButton.className));
+    buttons.push(button);
+    return buttons;
+}
+
+function addButtonEvents() {
+    document.querySelectorAll('div.answer-actions button, div.feedback-actions button').forEach(function (b) {
+        b.addEventListener('click', getButtonEvent(b.className));
+    });
+}
+
+function getButtonEvent(className) {
+    switch(className) {
+        case 'start-quiz':
+            return startQuiz;
+        case 'reset':
+            return resetAll;
+        case 'submit':
+            return checkAnswer;
+        case 'hint':
+            return getHint;
+        case 'back':
+            return goBack;
+        case 'next':
+            return nextQuestion;
+        default:
+            return null;
+    }
+}
+/**
+    End Button Providers
+*/
+
+
 function getQuizHeader(data) {
     var tag = 'h'+ (data.General.HeadingLevel || 1);
     var el = createElement(tag, data.General.QuizName || 'Quiz');
@@ -30,9 +192,10 @@ function setQuizHeader(el) {
 }
 
 function getPreQuiz(data) {
-    var instructions = getText(data.General.instructions, 'quiz-instructions');
-    var pre = getText(data.General.preQuizText, 'quiz-pre-text');
-    var elList = [];
+    var instructions = getText(data.General.instructions, 'quiz-instructions'),
+        pre = getText(data.General.preQuizText, 'quiz-pre-text'),
+        elList = [],
+        temp;
     if (instructions) {
         elList.push(instructions);
     }
@@ -40,10 +203,12 @@ function getPreQuiz(data) {
         elList.push(pre);
     }
     if (elList.length > 0) {
-        elList.push(getActionContainer(
-            getPreQuizButtons(),
-            'answer-actions'
-        ));
+        temp = document.createElement('div');
+        temp.classList.add('answer-actions');
+        getPreQuizButtons().forEach(function (b) {
+            temp.appendChild(b);
+        });
+        elList.push(temp);
     } else {
         elList = null;
     }
@@ -67,41 +232,25 @@ function buildQuiz(jsonFile) {
         var quizHeader = getQuizHeader(quizData);
         setQuizHeader(quizHeader);
         var preQuiz = getPreQuiz(quizData);
-        // repopulateContainer(SELECTORS.content, preQuiz);
-        getQuiz(currentIndex);
+        repopulateContainer(SELECTORS.content, preQuiz);
+        // getQuiz(currentIndex);
     });
 }
 
-function getQuiz(idx) {
-    currentQuestion = quizData.Questions[idx];
-    currentModel = getQuestionModel(currentQuestion.questionType);
-    if (savedActivity[idx]) {
-        document.body.replaceChild(savedActivity[idx], document.querySelector('main'));
-    } else {
-        if (currentModel) {
-            var questionEl = getQuestion(currentModel, quizData, currentQuestion);
-            var answerEl = getAnswer(
-                currentModel,
-                quizData,
-                currentQuestion,
-                getAnswerButtons(quizData)
-            );
-            repopulateContainer(SELECTORS.header, questionEl);
-            repopulateContainer(SELECTORS.content, answerEl);
-            repopulateContainer(SELECTORS.feedbacks);
-        } else {
-            // TODO: Notification question model not found
-            console.error('No Model of '+ currentQuestion.questionType);
-        }
-    }
-}
-
-function getAnswer(model, data, question, buttons) {
+function getAnswer(model, data, question) {
+    var buttons = getAnswerButtons(data),
+        answerEl = [],
+        actionContainer = document.createElement('div');
+        actionContainer.classList.add('answer-actions');
+        buttons.forEach(function (button) {
+            actionContainer.appendChild(button);
+        });
     if (model.getAnswer) {
-        var answerEl = model.getAnswer(buttons, question, data);
-        return answerEl;
+        answerEl = model.getAnswer(actionContainer, question, data);
+    } else {
+        answerEl.push(actionContainer);
     }
-    return null;
+    return answerEl;
 }
 
 function checkAnswer() {
@@ -202,92 +351,6 @@ function saveCurrentQuestion() {
     savedActivity[currentIndex] = document.querySelector('main').cloneNode(true);
 }
 
-function getQuestionModel(questionType) {
-    switch (questionType) {
-        case 'Matching':
-            return Matching;
-        case 'All That Apply':
-            return AllThatApply;
-        case 'Multiple Choice':
-            return MultipleChoice;
-        case 'Fill In The Blank':
-            return FillInTheBlank;
-        case 'Math':
-            return Arithmetic;
-        case 'Ordering':
-            return Ordering;
-        default:
-            return null;
-    }
-}
-
-function getPreQuizButtons() {
-    return [
-        {
-            onclick: 'startQuiz()',
-            label: 'Start Quiz',
-            className: 'start-quiz'
-        }
-    ];
-}
-
-function getPostQuizButtons() {
-    // TODO: return post quiz buttons
-}
-
-function getAnswerButtons(data) {
-    var resetAllButton = {
-        onclick: 'resetAll()',
-        label: 'Reset All',
-        className: 'reset'
-    };
-    var checkAnswerButton = {
-        onclick: 'checkAnswer()',
-        label: 'Check Answers',
-        className: 'submit'
-    };
-    var hintButton = {
-        onclick: 'getHint()',
-        label: 'Hint',
-        className: 'hint'
-    };
-    var previousButton = {
-        onclick: 'goBack()',
-        label: 'Go Back',
-        className: 'back'
-    };
-    var buttons = [];
-    if (currentIndex > 0 && data.General.allowPrevious) {
-        buttons.push(previousButton);
-    }
-    if (currentQuestion.reset) {
-        buttons.push(resetAllButton);
-    }
-    if (data.General.showHints &&
-        ((currentQuestion.hintText && currentQuestion.hintText.toUpperCase() != 'NONE') ||
-        (currentQuestion.hintMedia && currentQuestion.hintMedia.toUpperCase() != 'NONE'))
-    ) {
-        buttons.push(hintButton);
-    }
-    buttons.push(checkAnswerButton);
-    return buttons;
-}
-
-function getFeedbackButtons() {
-    return [
-        {
-            label: 'Continue',
-            onclick: 'nextQuestion()',
-            class: 'next'
-        }
-    ];
-}
-
-function startQuiz() {
-    currentIndex = 0;
-    getQuiz(currentIndex);
-}
-
 function repopulateContainer(selector, elList) {
     if (elList === undefined || elList === null) {
         elList = [];
@@ -341,10 +404,18 @@ function getFeedback(model, general, result) {
     score.appendChild(document.createTextNode(scoreText));
 
     var feedback = [title, score];
+    var buttons = getFeedbackButtons(),
+        actionContainer = document.createElement('div');
+        actionContainer.classList.add('feedback-actions');
+        buttons.forEach(function (button) {
+            actionContainer.appendChild(button);
+        });
     if (model && model.getFeedback) {
         feedback = feedback.concat(
-            model.getFeedback(result, getFeedbackButtons(), general)
+            model.getFeedback(result, actionContainer, general)
         );
+    } else {
+        feedback.push(actionContainer);
     }
     return feedback;
 }

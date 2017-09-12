@@ -10,18 +10,7 @@ var Ordering = (function () {
     /*jslint browser: true*/
     /*jslint todo: true  */
 
-    function getActionContainer(buttons, className) {
-        var el = document.createElement('div');
-        el.classList.add(className);
-        buttons.forEach(function (button) {
-            var buttonEl = document.createElement('button');
-            buttonEl.appendChild(document.createTextNode(button.label));
-            buttonEl.classList.add(button.className);
-            buttonEl.setAttribute('onclick', button.onclick);
-            el.appendChild(buttonEl);
-        });
-        return el;
-    }
+    // TODO: Only allow one option to be selected
 
     function random() {
         return Math.random() > 0.5;
@@ -61,7 +50,7 @@ var Ordering = (function () {
         return el;
     }
 
-    function getAnswer(buttons, data) {
+    function getAnswer(actionContainer, data) {
         /**
         "answers": [
             {
@@ -82,11 +71,11 @@ var Ordering = (function () {
         }
         return [
             answerContainer,
-            getActionContainer(buttons, 'answer-actions')
+            actionContainer
         ];
     }
 
-    function getFeedback(result, buttons) {
+    function getFeedback(result, actionContainer) {
         var h2 = document.createElement('h2'),
             div = document.createElement('div'),
             span,
@@ -116,7 +105,7 @@ var Ordering = (function () {
         return [
             h2,
             div,
-            getActionContainer(buttons, 'feedback-actions')
+            actionContainer
         ];
     }
 

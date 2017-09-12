@@ -8,8 +8,11 @@
     flex-wrap: wrap;
 }
 body {
+    max-height: 432px;
     max-width: 768px;
     margin: 0 auto;
+    overflow: hidden;
+    overflow-y: auto;
 }
 ul {
     list-style-type: none;

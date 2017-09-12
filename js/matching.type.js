@@ -22,25 +22,6 @@ var Matching = (function () {
         return el;
     }
 
-    function getActionContainer(buttons, className) {
-        if (buttons === undefined || buttons === null) {
-            buttons = [];
-        }
-        if (className === undefined || className === null) {
-            className = '';
-        }
-        var el = document.createElement('div');
-        el.classList.add(className);
-
-        buttons.forEach(function (button) {
-            var buttonEl = createElementWithText('button', button.label);
-            buttonEl.classList.add(button.className);
-            buttonEl.setAttribute('onclick', button.onclick);
-            el.appendChild(buttonEl);
-        });
-        return el;
-    }
-
     function focus(e) {
         e.target.classList.add('shadow');
     }
@@ -231,9 +212,8 @@ var Matching = (function () {
         ];
     }
 
-    function getAnswer(buttons, data) {
+    function getAnswer(actionContainer, data) {
         selectedItem = undefined;
-        var actionContainer = getActionContainer(buttons, 'answer-actions');
         return [
             getQuestionNodes(data.QuestionNodes),
             getAnswerNodes(data.AnswerNodes),
@@ -313,13 +293,10 @@ var Matching = (function () {
         return feedbacks;
     }
 
-    function getFeedback(result, buttons) {
+    function getFeedback(result, actionContainer) {
         var feedbacks = getFeedbackElements(result.result);
         feedbacks.push(
-            getActionContainer(
-                buttons,
-                'feedback-actions'
-            )
+            actionContainer
         );
         return feedbacks;
     }

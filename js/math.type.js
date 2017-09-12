@@ -123,13 +123,7 @@ var Arithmetic = (function () {
         ];
     }
 
-    function getAnswer(buttons) {
-        return [
-            getActionContainer(buttons, 'answer-actions')
-        ];
-    }
-
-    function getFeedback(result, buttons) {
+    function getFeedback(result, actionContainer) {
         var correctAnswer = document.createElement('p'),
             selectedAnswer = document.createElement('p');
 
@@ -142,7 +136,7 @@ var Arithmetic = (function () {
         return [
             correctAnswer,
             selectedAnswer,
-            getActionContainer(buttons, 'feedback-actions')
+            actionContainer
         ];
     }
 
@@ -186,7 +180,6 @@ var Arithmetic = (function () {
 
     return {
         getQuestion: getQuestion,
-        getAnswer: getAnswer,
         getFeedback: getFeedback,
         checkAnswer: checkAnswer
     };

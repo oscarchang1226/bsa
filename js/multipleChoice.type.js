@@ -9,20 +9,7 @@ var MultipleChoice = (function () {
     'use strict';
     /*jslint browser: true */
 
-    function getActionContainer(buttons, className) {
-        var el = document.createElement('div');
-        el.classList.add(className);
-        buttons.forEach(function (button) {
-            var buttonEl = document.createElement('button');
-            buttonEl.appendChild(document.createTextNode(button.label));
-            buttonEl.classList.add(button.className);
-            buttonEl.setAttribute('onclick', button.onclick);
-            el.appendChild(buttonEl);
-        });
-        return el;
-    }
-
-    function getAnswer(buttons, data) {
+    function getAnswer(actionContainer, data) {
         /**
         answers: [
         {
@@ -49,7 +36,7 @@ var MultipleChoice = (function () {
                 return div;
             });
         div.classList.add('answer-container');
-        answers.push(getActionContainer(buttons, 'answer-actions'));
+        answers.push(actionContainer);
         return answers;
     }
 
@@ -122,7 +109,7 @@ var MultipleChoice = (function () {
         return el;
     }
 
-    function getFeedback(result, buttons) {
+    function getFeedback(result, actionContainer) {
         var correctAnswer = getResult(result, 'c'),
             selectedAnswer = getResult(result, 's'),
             feedback = getResult(result, 'f');
@@ -130,10 +117,7 @@ var MultipleChoice = (function () {
             correctAnswer,
             selectedAnswer,
             feedback,
-            getActionContainer(
-                buttons,
-                'feedback-actions'
-            )
+            actionContainer
         ];
     }
 

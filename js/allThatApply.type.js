@@ -11,20 +11,7 @@ var AllThatApply = (function () {
 
     /*jslint browser:true */
 
-    function getActionContainer(buttons, className) {
-        var el = document.createElement('div');
-        el.classList.add(className);
-        buttons.forEach(function (button) {
-            var buttonEl = document.createElement('button');
-            buttonEl.appendChild(document.createTextNode(button.label));
-            buttonEl.classList.add(button.className);
-            buttonEl.setAttribute('onclick', button.onclick);
-            el.appendChild(buttonEl);
-        });
-        return el;
-    }
-
-    function getAnswer(buttons, data) {
+    function getAnswer(actionContainer, data) {
         // answers: [{
         //   "answerText": "Jem",
         //   "feedBack": "Correct! Jem is Atticus' son.",
@@ -48,7 +35,7 @@ var AllThatApply = (function () {
             div.appendChild(label);
             return div;
         });
-        answers.push(getActionContainer(buttons, 'answer-actions'));
+        answers.push(actionContainer);
         return answers;
     }
 
@@ -113,7 +100,7 @@ var AllThatApply = (function () {
         };
     }
 
-    function getFeedback(result, buttons) {
+    function getFeedback(result, actionContainer) {
         var correctAnswer = getResult(result, true),
             selectedAnswer = getResult(result),
             ul = document.createElement('ul'),
@@ -130,10 +117,7 @@ var AllThatApply = (function () {
             selectedAnswer,
             title,
             ul,
-            getActionContainer(
-                buttons,
-                'feedback-actions'
-            )
+            actionContainer
         ];
     }
 

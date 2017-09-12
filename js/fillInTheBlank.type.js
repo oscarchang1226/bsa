@@ -12,19 +12,6 @@ var FillInTheBlank = (function () {
 
     var INST = 'Fill in the blanks with appropriate answers.';
 
-    function getActionContainer(buttons, className) {
-        var el = document.createElement('div');
-        el.classList.add(className);
-        buttons.forEach(function (button) {
-            var buttonEl = document.createElement('button');
-            buttonEl.appendChild(document.createTextNode(button.label));
-            buttonEl.classList.add(button.className);
-            buttonEl.setAttribute('onclick', button.onclick);
-            el.appendChild(buttonEl);
-        });
-        return el;
-    }
-
     function getInstructions(show) {
         if (show === undefined) {
             show = true;
@@ -114,13 +101,7 @@ var FillInTheBlank = (function () {
         ];
     }
 
-    function getAnswer(buttons) {
-        return [
-            getActionContainer(buttons, 'answer-actions')
-        ];
-    }
-
-    function getFeedback(result, buttons) {
+    function getFeedback(result, actionContainer) {
         var correctAnswer = document.createElement('p'),
             selectedAnswer = document.createElement('p');
         correctAnswer.innerHTML = '<b>Correct Answer: </b>' + result.correctAnswer;
@@ -132,7 +113,7 @@ var FillInTheBlank = (function () {
         return [
             correctAnswer,
             selectedAnswer,
-            getActionContainer(buttons, 'feedback-actions')
+            actionContainer
         ];
     }
 
@@ -176,7 +157,6 @@ var FillInTheBlank = (function () {
 
     return {
         getQuestion: getQuestion,
-        getAnswer: getAnswer,
         getFeedback: getFeedback,
         checkAnswer: checkAnswer
     };
