@@ -1,3 +1,6 @@
+/*jslint browser: true*/
+/*global $, jQuery*/
+
 var $ = jQuery;
 
 var savedActivity = [];
@@ -14,17 +17,53 @@ var ICON_NAMES = {
     correct: 'done',
     wrong: 'clear',
     partial: 'timelapse'
+};
+
+function getQuizHeader(data) {
+    var tag = 'h'+ (data.General.HeadingLevel || 1);
+    var el = createElement(tag, data.General.QuizName || 'Quiz');
+    return el;
 }
 
-buildQuiz('data/quiz-data.json');
+function setQuizHeader(el) {
+    $('header').empty().append(el);
+}
+
+function getPreQuiz(data) {
+    var instructions = getText(data.General.instructions, 'quiz-instructions');
+    var pre = getText(data.General.preQuizText, 'quiz-pre-text');
+    var elList = [];
+    if (instructions) {
+        elList.push(instructions);
+    }
+    if (pre) {
+        elList.push(pre);
+    }
+    if (elList.length > 0) {
+        elList.push(getActionContainer(
+            getPreQuizButtons(),
+            'answer-actions'
+        ));
+    } else {
+        elList = null;
+    }
+    return elList;
+}
 
 function buildQuiz(jsonFile) {
-    $.getJSON(jsonFile, data => {
+    'use strict';
+    $.getJSON(jsonFile, function (data) {
         quizData = data;
-        quizData.Questions = quizData.Questions.filter(q => !q.skip);
-        quizData.Questions.forEach(q => {
-            savedActivity.push(null);
-        });
+        quizData.Questions = quizData.Questions.filter(
+            function (q) {
+                return !q.skip;
+            }
+        );
+        quizData.Questions.forEach(
+            function () {
+                return savedActivity.push(null);
+            }
+        );
         var quizHeader = getQuizHeader(quizData);
         setQuizHeader(quizHeader);
         var preQuiz = getPreQuiz(quizData);
@@ -59,7 +98,7 @@ function getQuiz(idx) {
 
 function getAnswer(model, data, question, buttons) {
     if (model.getAnswer) {
-        var answerEl = model.getAnswer(data, question, buttons);
+        var answerEl = model.getAnswer(buttons, question, data);
         return answerEl;
     }
     return null;
@@ -93,7 +132,7 @@ function getHint() {
 
     dialog.appendChild(closeIcon);
     dialog.appendChild(text);
-    medias.forEach(m => dialog.appendChild(m));
+    medias.forEach(function (m) { dialog.appendChild(m); });
     backdrop.appendChild(dialog);
     document.querySelector('main').appendChild(backdrop);
 }
@@ -109,7 +148,7 @@ function closeDialog(e) {
 function getHintMedia(hintMedias) {
     var media = [];
     if (Array.isArray(hintMedias)) {
-        hintMedias.forEach(m => {
+        hintMedias.forEach(function (m) {
             // {
             //   "type": "image",
             //   "src": "http://ih.constantcontact.com/fs077/1101742975031/img/201.jpg",
@@ -249,9 +288,12 @@ function startQuiz() {
     getQuiz(currentIndex);
 }
 
-function repopulateContainer(selector, elList=[]) {
+function repopulateContainer(selector, elList) {
+    if (elList === undefined || elList === null) {
+        elList = [];
+    }
     $(selector).empty();
-    elList.forEach(el => {
+    elList.forEach(function (el) {
         if (el instanceof HTMLElement) {
             $(selector).append(el);
         }
@@ -263,15 +305,14 @@ function getQuestion(model, general, data) {
     var questionTitle = createElement('h2', title, {className: 'question-title'});
     var elList;
     if (model && model.getQuestion) {
-        elList = model.getQuestion(general, data);
+        elList = model.getQuestion(data, general);
     } else {
         elList = [
             createElement('p', data.questionText, 'question')
         ];
     }
-    return [
-        questionTitle, ...elList
-    ]
+
+    return [questionTitle].concat(elList);
 }
 
 function getFeedback(model, general, result) {
@@ -302,20 +343,10 @@ function getFeedback(model, general, result) {
     var feedback = [title, score];
     if (model && model.getFeedback) {
         feedback = feedback.concat(
-            ...model.getFeedback(general, result, getFeedbackButtons())
+            model.getFeedback(result, getFeedbackButtons(), general)
         );
     }
     return feedback;
-}
-
-function getQuizHeader(data) {
-    var tag = 'h'+ (data.General.HeadingLevel || 1);
-    var el = createElement(tag, data.General.QuizName || 'Quiz');
-    return el;
-}
-
-function setQuizHeader(el) {
-    $('header').empty().append(el);
 }
 
 function getText(text, className) {
@@ -335,27 +366,6 @@ function getText(text, className) {
     return null;
 }
 
-function getPreQuiz(data) {
-    var instructions = getText(data.General.instructions, 'quiz-instructions');
-    var pre = getText(data.General.preQuizText, 'quiz-pre-text');
-    var elList = [];
-    if (instructions) {
-        elList.push(instructions);
-    }
-    if (pre) {
-        elList.push(pre);
-    }
-    if (elList.length > 0) {
-        elList.push(getActionContainer(
-            getPreQuizButtons(),
-            'answer-actions'
-        ));
-    } else {
-        elList = null;
-    }
-    return elList;
-}
-
 function getPostQuiz(data) {
     // TODO: simulate after quiz is taken (Reports, PostText and Media)
     console.error('Leaving boundaries...');
@@ -364,14 +374,14 @@ function getPostQuiz(data) {
 /**
 Potential Default Type Functions
 **/
-function createElement(tag, text, options=null) {
+function createElement(tag, text, options) {
     var el = document.createElement(tag);
     if (text) {
         var text = document.createTextNode(text);
         el.appendChild(text);
     }
     if (options && typeof(options) === 'object') {
-        Object.keys(options).forEach(o => {
+        Object.keys(options).forEach(function(o) {
             el[o] = options[o];
         });
     }
@@ -380,7 +390,7 @@ function createElement(tag, text, options=null) {
 
 function getActionContainer(buttons, className) {
     var el = createElement('div', null, {className: className});
-    buttons.forEach(button => {
+    buttons.forEach(function (button) {
         var buttonEl = createElement('button', button.label, {className: button.className});
         buttonEl.setAttribute('onclick', button.onclick);
         el.appendChild(buttonEl);
@@ -403,3 +413,5 @@ function getIcon(text, onclick) {
     }
     return el;
 }
+
+buildQuiz('data/quiz-data.json');

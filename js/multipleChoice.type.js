@@ -5,14 +5,24 @@ August 2017
 
 ochang @ Smith & Associates
 **/
-var MultipleChoice = (function() {
-    return {
-        getAnswer: getAnswer,
-        checkAnswer: checkAnswer,
-        getFeedback: getFeedback
-    };
+var MultipleChoice = (function () {
+    'use strict';
+    /*jslint browser: true */
 
-    function getAnswer(general, data, buttons) {
+    function getActionContainer(buttons, className) {
+        var el = document.createElement('div');
+        el.classList.add(className);
+        buttons.forEach(function (button) {
+            var buttonEl = document.createElement('button');
+            buttonEl.appendChild(document.createTextNode(button.label));
+            buttonEl.classList.add(button.className);
+            buttonEl.setAttribute('onclick', button.onclick);
+            el.appendChild(buttonEl);
+        });
+        return el;
+    }
+
+    function getAnswer(buttons, data) {
         /**
         answers: [
         {
@@ -22,46 +32,53 @@ var MultipleChoice = (function() {
         },
         ...]
         **/
-        var div = document.createElement('div');
+        var div = document.createElement('div'),
+            answers = data.answers.map(function (a, idx) {
+                var elId = 'radioButton' + idx,
+                    el = document.createElement('input'),
+                    label = document.createElement('label');
+                el.setAttribute('type', 'radio');
+                el.setAttribute('id', elId);
+                el.setAttribute('value', idx);
+                el.setAttribute('name', 'selectedAnswer');
+                label.appendChild(document.createTextNode(a.answerText));
+                label.classList.add('radio-label');
+                label.setAttribute('for', elId);
+                div.appendChild(el);
+                div.appendChild(label);
+                return div;
+            });
         div.classList.add('answer-container');
-        var answers = data.answers.map((a,idx) => {
-            var elId = 'radioButton'+idx;
-            var el = document.createElement('input');
-            el.setAttribute('type', 'radio');
-            el.setAttribute('id', elId);
-            el.setAttribute('value', idx);
-            el.setAttribute('name', 'selectedAnswer');
-            var label = document.createElement('label');
-            label.appendChild(document.createTextNode(a.answerText));
-            label.classList.add('radio-label');
-            label.setAttribute('for', elId);
-            div.appendChild(el);
-            div.appendChild(label);
-            return div;
-        });
-        return [
-            ...answers,
-            getActionContainer(buttons, 'answer-actions')
-        ];
+        answers.push(getActionContainer(buttons, 'answer-actions'));
+        return answers;
     }
 
     function checkAnswer(data) {
-        var score = 0;
-        var maxScore = data.maxScoreValue;
-        var temp = data.answers.map((a, idx) => {
-            a.id = idx;
-            return a;
-        });
-        var correctAnswer = temp.find(a => {
-            return a.scoreValue > 0;
-        });
-        var selected = temp.find((a, idx) => {
-            var el = document.getElementById('radioButton'+idx);
-            return el.checked;
-        });
-        selected.isCorrect = correctAnswer.id == selected.id;
+        /*jslint unparam: true*/
+        var score = 0,
+            maxScore = data.maxScoreValue,
+            temp = data.answers.map(function (a, idx) {
+                a.id = idx;
+                return a;
+            }),
+            correctAnswer = temp.find(function (a) {
+                return a.scoreValue > 0;
+            }),
+            selected = temp.find(function (ignore, idx) {
+                var el = document.getElementById('radioButton' + idx);
+                return el.checked;
+            });
+        /*jslint unparam: false*/
+        if (selected) {
+            selected.isCorrect = correctAnswer.id === selected.id;
+        } else {
+            selected = {
+                isCorrect: false,
+                answerText: ''
+            };
+        }
         return {
-            score: selected.isCorrect? maxScore : score,
+            score: selected.isCorrect ? maxScore : score,
             maxScore: maxScore,
             correctAnswer: correctAnswer.answerText,
             selected: selected.answerText,
@@ -69,67 +86,62 @@ var MultipleChoice = (function() {
         };
     }
 
-    function getFeedback(general, result, buttons) {
-        var correctAnswer = getResult(result, 'c');
-        var selectedAnswer = getResult(result, 's');
-        var feedback = getResult(result, 'f');
-        return [
-            correctAnswer,
-            selectedAnswer,
-            feedback,
-            getActionContainer(
-                 buttons,
-                 'feedback-actions'
-             )
-        ];
-    }
-
-    function getResult(result, isCorrect) {
-        var attr = getResultAttributes(result, isCorrect);
-        var el = document.createElement('p');
-        el.classList.add(attr.className);
-        var bold = document.createElement('b');
-        bold.appendChild(document.createTextNode(attr.boldText));
-        var text = document.createTextNode(attr.value);
-        el.appendChild(bold);
-        el.appendChild(text);
-        return el;
-    }
-
     function getResultAttributes(result, type) {
-        var result;
-        if (type == 'c') {
+        if (type === 'c') {
             result = {
                 className: 'feedback-correct-answer',
                 boldText: 'Correct Answer: ',
                 value: result.correctAnswer
-            }
-        } else if (type == 's'){
+            };
+        } else if (type === 's') {
             result = {
                 className: 'feedback-selected-answer',
                 boldText: 'You selected: ',
                 value: result.selected
             };
-        } else if (type == 'f') {
+        } else if (type === 'f') {
             result = {
                 className: 'feedback-item',
                 boldText: 'Feedback: ',
-                value: result.result.feedBack
+                value: result.result.feedBack || ''
             };
         }
         return result;
     }
 
-    function getAnswerFeedback(result) {
-        var option = {
-            className: 'feedback-item'
-        };
-        var el = createElement('p', null, option);
-        var bold = createElement('b', 'Feedback: ');
-        var text = document.createTextNode(result.result.feedBack);
+    function getResult(result, type) {
+        var attr = getResultAttributes(result, type),
+            el = document.createElement('p'),
+            bold = document.createElement('b'),
+            text = document.createTextNode(attr.value);
+
+        el.classList.add(attr.className);
+        bold.appendChild(document.createTextNode(attr.boldText));
         el.appendChild(bold);
         el.appendChild(text);
         return el;
     }
 
-})();
+    function getFeedback(result, buttons) {
+        var correctAnswer = getResult(result, 'c'),
+            selectedAnswer = getResult(result, 's'),
+            feedback = getResult(result, 'f');
+        return [
+            correctAnswer,
+            selectedAnswer,
+            feedback,
+            getActionContainer(
+                buttons,
+                'feedback-actions'
+            )
+        ];
+    }
+
+
+    return {
+        getAnswer: getAnswer,
+        checkAnswer: checkAnswer,
+        getFeedback: getFeedback
+    };
+
+}());
