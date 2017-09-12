@@ -127,7 +127,7 @@ var Ordering = (function () {
         result.maxScore = data.maxScoreValue;
         result.answers = data.answers.map(function (a) {
             el = document.querySelector('select[name="' + a.answerText + '"]');
-            a.isCorrect = a.key === el.value;
+            a.isCorrect = Number(a.key) === Number(el.value);
             if (result.isCorrect === undefined) {
                 result.isCorrect = a.isCorrect;
             } else {

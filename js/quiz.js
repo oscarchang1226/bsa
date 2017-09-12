@@ -413,5 +413,3 @@ function getIcon(text, onclick) {
     }
     return el;
 }
-
-buildQuiz('data/quiz-data.json');
