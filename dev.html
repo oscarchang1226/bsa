@@ -15,14 +15,26 @@
             <div class="content"></div>
             <div class="feedbacks"></div>
         </main>
+
         <script src="https://s.brightspace.com/lib/jquery/1.11.0/jquery.min.js"></script>
         <script>window.jQuery || document.write('<script src="../thirdpartylib/jquery/jquery-1.11.0.min.js"><\/script>')</script>
-        <script src="js/matching.type.js"></script>
-        <script src="js/allThatApply.type.js"></script>
-        <script src="js/multipleChoice.type.js"></script>
-        <script src="js/fillInTheBlank.type.js"></script>
-        <script src="js/math.type.js"></script>
-        <script src="js/ordering.type.js"></script>
+
+        <!-- Valence Scripts -->
+        <!-- <script src="third_party/d2l-session-auth.min.js"></script>
+        <script src="third_party/csval-lib.min.js"></script> -->
+        <script src="third_party/sha.js"></script>
+        <script src="third_party/valence.js"></script>
+
+        <!-- Velence Ext. Script -->
+        <script src="js/valence/valence-smith.js"></script>
+
+        <!-- Smith Quiz -->
+        <script src="js/quiz-types/matching.type.js"></script>
+        <script src="js/quiz-types/allThatApply.type.js"></script>
+        <script src="js/quiz-types/multipleChoice.type.js"></script>
+        <script src="js/quiz-types/fillInTheBlank.type.js"></script>
+        <script src="js/quiz-types/math.type.js"></script>
+        <script src="js/quiz-types/ordering.type.js"></script>
         <script src="js/quiz.js"></script>
         <script>buildQuiz('data/quiz-data.json');</script>
     </body>

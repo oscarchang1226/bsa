@@ -61,6 +61,8 @@ main {
 }
 .quiz-pre-text,
 .quiz-pre-text > p,
+.quiz-post-text,
+.quiz-post-text  > p,
 .header > p {
     margin: 0 0 8px 0;
 }
@@ -154,6 +156,15 @@ div.answer-container label.radio-label {
 div.answer-container label.checkbox-label:hover,
 div.answer-container label.radio-label:hover {
     background-color: rgba(0,0,0,.1);
+}
+div.quiz-post-media {
+    width: 100%;
+    text-align: center;
+}
+div.quiz-post-media > * {
+    min-width: 0;
+    margin: auto auto 8px auto;
+    max-width: 100%;
 }
 /***************************************************************************/
 /** Matching Type Styles **/

@@ -1,7 +1,26 @@
 /*jslint browser: true*/
-/*global $, jQuery*/
+/*global $, jQuery, CSVal, console */
+
+/*
+CSVal.init();obj = {
+      "Comments": {"Content": "Go to MyEducator for more details.", "Type": "Text"},
+      "PrivateComments": {"Content": "Go to MyEducator to see any private comments", "Type": "Text"},
+      "GradeObjectType": 1,
+      "PointsNumerator": 5
+};url = '/d2l/api/le/1.25/7143/grades/703/values/204';valence_req.put(url).send(obj).use(valence_auth).end((err, res) => console.log(res));
+*/
 
 var $ = jQuery;
+var CSVal = CSVal || {};
+// try {
+//     CSVal.init();
+// } catch (e) {
+//     console.error('Valence not initiated', e);
+// }
+$.getJSON('data/api-dummy.json', function (data) {
+    CSVal = data;
+});
+
 
 var savedActivity = [];
 var currentIndex = 0;
@@ -68,8 +87,131 @@ function getQuiz(idx) {
 }
 
 function startQuiz() {
-    currentIndex = 0;
+    currentIndex = 6;
     getQuiz(currentIndex);
+}
+
+function havePostQuizText(data) {
+    return data.postQuizText && data.postQuizText !== 'none';
+}
+
+function havePostQuizMedia(data) {
+    return data.postQuizMedia && data.postQuizMedia.length > 0;
+}
+
+function havePostQuiz(data) {
+    return havePostQuizText(data.General) || havePostQuizMedia(data.General);
+}
+
+function getPreQuiz(data) {
+    var instructions = getText(data.General.instructions, 'quiz-instructions'),
+        pre = getText(data.General.preQuizText, 'quiz-pre-text'),
+        elList = [],
+        temp;
+    if (instructions) {
+        elList.push(instructions);
+    }
+    if (pre) {
+        elList.push(pre);
+    }
+    if (elList.length > 0) {
+        temp = document.createElement('div');
+        temp.classList.add('answer-actions');
+        getPreQuizButtons().forEach(function (b) {
+            temp.appendChild(b);
+        });
+        elList.push(temp);
+    } else {
+        elList = null;
+    }
+    return elList;
+}
+
+function getPostQuiz(data, containerParent) {
+    var text,
+        medias,
+        elList = [],
+        temp;
+    if (havePostQuizText(data.General)) {
+        text = getText(data.General.postQuizText, 'quiz-post-text');
+        elList.push(text);
+    }
+    if (havePostQuizMedia(data.General)) {
+        medias = document.createElement('div');
+        medias.classList.add('quiz-post-media');
+        data.General.postQuizMedia.forEach(function (media) {
+            medias.appendChild(getMedia(media, containerParent));
+        });
+        elList.push(medias);
+    }
+    temp = document.createElement('div');
+    temp.classList.add('answer-actions');
+    getPostQuizButtons(data).forEach(function (b) {
+        temp.appendChild(b);
+    });
+    elList.push(temp);
+    return elList;
+}
+
+function getMedia(media, containerParent) {
+    var el, temp;
+    switch (media.type.toUpperCase()) {
+        case 'VIDEO':
+            el = document.createElement('video');
+            el.setAttribute('controls', 'controls');
+            break;
+        case 'YOUTUBEVIDEO':
+            el = document.createElement('iframe');
+            el.setAttribute('frameborder', '0');
+            el.setAttribute('allowfullscreen', '');
+            break;
+        case 'IMAGE':
+            el = document.createElement('img');
+            break;
+        default:
+            console.error('No support for media ' + media.type);
+            return;
+    }
+    el.setAttribute('src', media.src);
+    el.setAttribute('alt', media.alt || media.type);
+    if (media.type.toUpperCase() === 'YOUTUBEVIDEO') {
+        temp = document.querySelector(containerParent);
+        if (temp) {
+            var width = media.width && media.width !== 'none'? media.width : temp.offsetWidth,
+                height = width * 0.5625;
+            el.setAttribute('width', width);
+            el.setAttribute('height', height);
+        } else {
+            el.setAttribute('width', 480);
+            el.setAttribute('height', 480 * .5625);
+        }
+    } else {
+        if (media.height && media.height !== 'none' && !el.getAttribute('height')) {
+            el.setAttribute('height', media.height);
+        }
+        if (media.width && media.width !== 'none' && !el.getAttribute('width')) {
+            el.setAttribute('width', media.width);
+        }
+    }
+    return el;
+}
+
+function endQuiz() {
+    if (havePostQuiz(quizData)) {
+        repopulateContainer(SELECTORS.header);
+        repopulateContainer(SELECTORS.feedbacks);
+        repopulateContainer(
+            SELECTORS.content,
+            getPostQuiz(quizData, SELECTORS.content)
+        );
+    } else {
+        finish();
+    }
+}
+
+function finish() {
+    // TODO: click parent frame next button
+    console.warn('Finish...');
 }
 
 /**
@@ -83,16 +225,21 @@ function getPreQuizButtons() {
         },
         buttons = [],
         button;
-    button = document.createElement('button');
-    button.classList.add(startQuizButton.className);
-    button.appendChild(document.createTextNode(startQuizButton.label));
-    button.addEventListener('click', getButtonEvent(startQuizButton.className));
+    button = getButtonElement(startQuizButton);
     buttons.push(button);
     return buttons;
 }
 
 function getPostQuizButtons() {
-    // TODO: return post quiz buttons
+    var finishButton = {
+        label: 'Finish Quiz',
+        className: 'finish'
+        },
+        buttons = [],
+        button;
+    button = getButtonElement(finishButton);
+    buttons.push(button);
+    return buttons;
 }
 
 function getAnswerButtons(data) {
@@ -128,28 +275,37 @@ function getAnswerButtons(data) {
     }
     buttons.push(checkAnswerButton);
     buttons = buttons.map(function (b) {
-        button = document.createElement('button');
-        button.classList.add(b.className);
-        button.appendChild(document.createTextNode(b.label));
-        button.addEventListener('click', getButtonEvent(b.className));
-        return button;
+        return getButtonElement(b);
     });
     return buttons;
 }
 
-function getFeedbackButtons() {
+function getFeedbackButtons(data) {
     var contButton = {
             label: 'Continue',
             className: 'next'
         },
+        endQuizButton = {
+            label: 'End Quiz',
+            className: 'end-quiz'
+        },
         buttons = [],
         button;
-    button = document.createElement('button');
-    button.classList.add(contButton.className);
-    button.appendChild(document.createTextNode(contButton.label));
-    button.addEventListener('click', getButtonEvent(contButton.className));
+    if (currentIndex === data.Questions.length-1) {
+        button = getButtonElement(endQuizButton);
+    } else {
+        button = getButtonElement(contButton);
+    }
     buttons.push(button);
     return buttons;
+}
+
+function getButtonElement(obj) {
+    var button = document.createElement('button');
+    button.classList.add(obj.className);
+    button.appendChild(document.createTextNode(obj.label));
+    button.addEventListener('click', getButtonEvent(obj.className));
+    return button;
 }
 
 function addButtonEvents() {
@@ -172,6 +328,10 @@ function getButtonEvent(className) {
             return goBack;
         case 'next':
             return nextQuestion;
+        case 'end-quiz':
+            return endQuiz;
+        case 'finish':
+            return finish;
         default:
             return null;
     }
@@ -189,30 +349,6 @@ function getQuizHeader(data) {
 
 function setQuizHeader(el) {
     $('header').empty().append(el);
-}
-
-function getPreQuiz(data) {
-    var instructions = getText(data.General.instructions, 'quiz-instructions'),
-        pre = getText(data.General.preQuizText, 'quiz-pre-text'),
-        elList = [],
-        temp;
-    if (instructions) {
-        elList.push(instructions);
-    }
-    if (pre) {
-        elList.push(pre);
-    }
-    if (elList.length > 0) {
-        temp = document.createElement('div');
-        temp.classList.add('answer-actions');
-        getPreQuizButtons().forEach(function (b) {
-            temp.appendChild(b);
-        });
-        elList.push(temp);
-    } else {
-        elList = null;
-    }
-    return elList;
 }
 
 function buildQuiz(jsonFile) {
@@ -404,7 +540,7 @@ function getFeedback(model, general, result) {
     score.appendChild(document.createTextNode(scoreText));
 
     var feedback = [title, score];
-    var buttons = getFeedbackButtons(),
+    var buttons = getFeedbackButtons(general),
         actionContainer = document.createElement('div');
         actionContainer.classList.add('feedback-actions');
         buttons.forEach(function (button) {
@@ -435,11 +571,6 @@ function getText(text, className) {
         return el;
     }
     return null;
-}
-
-function getPostQuiz(data) {
-    // TODO: simulate after quiz is taken (Reports, PostText and Media)
-    console.error('Leaving boundaries...');
 }
 
 /**
