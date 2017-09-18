@@ -21,15 +21,33 @@
  */
 
 /*jslint browser: true */
-/*global D2L, jQuery, $, console */
+/*global D2L, jQuery, $, console, SMI */
 
-var VERSION = '1.25',
-    SMI;
-SMI = SMI || {};
+var LEVERSION = '1.25',
+    BASVERSION = '1.10',
+    SMI = SMI || {};
+SMI.getAppContext = function () {
+    'use strict';
+    var a = 'Bocs5Yg-9rEpxK_0L4dGUw',
+        b = 'zEoByoY5l3sWLvBkwXAmcA';
+    return new D2L.ApplicationContext(a, b);
+};
+SMI.getUserContext = function () {
+    'use strict';
+    var c = 'https://smithweb.brightspace.com',
+        d = '443',
+        e = 'e9RfZgHDTu3vm_gqMPsmfC',
+        f = 'DphdEgK0jpS_8P-ZXaZQWR';
+    return SMI.getAppContext().createUserContextWithValues(c, d, e, f);
+};
 SMI.endpoints = {
     put_grades: function (ou, gi, ui) {
         'use strict';
-        return '/d2l/api/le/' + VERSION + '/' + ou + '/grades/' + gi + '/values/' + ui;
+        return '/d2l/api/le/' + LEVERSION + '/' + ou + '/grades/' + gi + '/values/' + ui;
+    },
+    issue_award: function (ou) {
+        'use strict';
+        return '/d2l/api/bas/' + BASVERSION + '/orgunits/' + ou + '/issued/';
     }
 };
 SMI.preCall = function (cb) {
@@ -37,28 +55,42 @@ SMI.preCall = function (cb) {
     // $.get('/d2l/lp/auth/xsrf-tokens', cb);
     cb({'hitCodePrefix': '-1315665569', 'referrerToken': 'Znpl0OTAb63pYv88SK92DaKkwZsArud9'});
 };
-SMI.put_grades = function (ou, gi, ui, data) {
+SMI.issueAward = function (ou, data) {
     'use strict';
     if (D2L) {
-        var a = 'Bocs5Yg-9rEpxK_0L4dGUw',
-            b = 'zEoByoY5l3sWLvBkwXAmcA',
-            c = 'https://smithweb.brightspace.com',
-            d = 443,
-            e = 'e9RfZgHDTu3vm_gqMPsmfC',
-            f = 'DphdEgK0jpS_8P-ZXaZQWR',
-            appContext,
-            userContext,
-            url,
+        var url,
             callback;
-        appContext = new D2L.ApplicationContext(a, b);
-        userContext = appContext.createUserContextWithValues(
-            c,
-            d,
-            e,
-            f
-        );
+        url = SMI.endpoints.issue_award(ou);
+        url = SMI.getUserContext().createUrlForAuthentication(url, 'POST');
+        callback = function (d) {
+            $.ajax(
+                {
+                    type: 'POST',
+                    url: url,
+                    success: function (x) { console.log(x); },
+                    error: function (x) { console.log(x); },
+                    contentType: "application/json",
+                    dataType: 'json',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Csrf-Token': d.referrerToken
+                    },
+                    data: JSON.stringify(data)
+                }
+            );
+        };
+        return SMI.preCall(callback);
+    }
+    return null;
+};
+SMI.putGrades = function (ou, gi, ui, data) {
+    'use strict';
+    if (D2L) {
+        var url,
+            callback;
         url = SMI.endpoints.put_grades(ou, gi, ui);
-        url = userContext.createUrlForAuthentication(url, 'PUT');
+        url = SMI.getUserContext().createUrlForAuthentication(url, 'PUT');
         callback = function (d) {
             $.ajax(
                 {
@@ -77,7 +109,7 @@ SMI.put_grades = function (ou, gi, ui, data) {
                 }
             );
         };
-        SMI.preCall(callback);
+        return SMI.preCall(callback);
     }
     return null;
 };

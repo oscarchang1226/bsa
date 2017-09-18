@@ -23,6 +23,8 @@ $.getJSON('data/api-dummy.json', function (data) {
 
 
 var savedActivity = [];
+var savedScores = 0;
+var maxScore = 0;
 var currentIndex = 0;
 var currentModel = null;
 var currentQuestion = null;
@@ -87,7 +89,7 @@ function getQuiz(idx) {
 }
 
 function startQuiz() {
-    currentIndex = 6;
+    currentIndex = 1;
     getQuiz(currentIndex);
 }
 
@@ -212,6 +214,9 @@ function endQuiz() {
 function finish() {
     // TODO: click parent frame next button
     console.warn('Finish...');
+    console.log(SMI);
+    console.log(savedScores);
+    console.log(maxScore);
 }
 
 /**
@@ -403,6 +408,8 @@ function checkAnswer() {
     if (currentModel.checkAnswer) {
         // TODO: Implement model check answer with current question data
         result = currentModel.checkAnswer(currentQuestion);
+        savedScores += result.score;
+        maxScore += result.maxScore;
         var feedbackEl = getFeedback(currentModel, quizData, result);
         repopulateContainer(SELECTORS.feedbacks, feedbackEl);
     } else {
