@@ -100,7 +100,7 @@ function havePostQuizMedia(data) {
 }
 
 function havePostQuiz(data) {
-    return havePostQuizText(data.General) || havePostQuizMedia(data.General);
+    return !data.General.skipPostQuiz && (havePostQuizText(data.General) || havePostQuizMedia(data.General));
 }
 
 function getPreQuiz(data) {
@@ -289,10 +289,18 @@ function getFeedbackButtons(data) {
             label: 'End Quiz',
             className: 'end-quiz'
         },
+        finishButton = {
+            label: 'Next Topic',
+            className: 'finish'
+        },
         buttons = [],
         button;
     if (currentIndex === data.Questions.length-1) {
-        button = getButtonElement(endQuizButton);
+        if (havePostQuiz(data)) {
+            button = getButtonElement(endQuizButton);
+        } else {
+            button = getButtonElement(finishButton);
+        }
     } else {
         button = getButtonElement(contButton);
     }

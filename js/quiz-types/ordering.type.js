@@ -16,14 +16,28 @@ var Ordering = (function () {
         return Math.random() > 0.5;
     }
 
+    function onChange(e) {
+        var val = e.currentTarget.value,
+            nam = e.currentTarget.name;
+        if (val) {
+            e.currentTarget
+                .parentElement
+                .querySelectorAll('select:not([name="' + nam + '"])option')
+                .forEach(function (o) {
+                    if (o === val) {
+                        o.selected = false;
+                    }
+                });
+        }
+    }
+
     function getSelects(i) {
         if (i === undefined || i === null) {
             i = 0;
         }
         var s = document.createElement('select'),
-            emptyOption = document.createElement('option'),
-            o;
-        s.appendChild(emptyOption);
+            o = document.createElement('option');
+        s.appendChild(o);
         while (s.children.length <= i) {
             o = document.createElement('option');
             o.appendChild(document.createTextNode(s.children.length));
