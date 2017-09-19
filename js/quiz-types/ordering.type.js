@@ -18,9 +18,28 @@ var Ordering = (function () {
 
     function onChange(e) {
         // reenable all options
-        // get select values with select name
-        // for each value and select name
-        // disable all option with value and not same name
+        var par = e.currentTarget.parentElement,
+            temp = [];
+        par.querySelectorAll('option[disabled="true"]').forEach(function (o) {
+            o.removeAttribute('disabled');
+        });
+        par.querySelectorAll('select').forEach(function (select) {
+            if (select.value) {
+                // selector for selects with same value, different name
+                temp = 'select:not([name="' + select.name + '"])';
+                temp += '[value="' + select.value + '"]';
+                par.querySelectorAll(temp).forEach(function (s) {
+                    s.value = undefined;
+                });
+
+                // selector for options with same value, select different name
+                temp = 'select:not([name="' + select.name + '"]) ';
+                temp += 'option[value="' + select.value + '"]';
+                par.querySelectorAll(temp).forEach(function (o) {
+                    o.setAttribute('disabled', 'true');
+                });
+            }
+        });
     }
 
     function getSelects(i) {
@@ -36,6 +55,7 @@ var Ordering = (function () {
             o.setAttribute('value', s.children.length);
             s.appendChild(o);
         }
+        s.setAttribute('onchange', 'onChange(event)');
         return s;
     }
 
@@ -87,7 +107,7 @@ var Ordering = (function () {
             span,
             correct;
 
-        h2.appendChild(document.createTextNode('Feedbacks: '));
+        h2.appendChild(document.createTextNode('Feedback'));
         h2.classList.add('feedback-title');
         div.classList.add('feedback-container', 'flex-wrap');
         result.answers.forEach(function (a) {
@@ -145,7 +165,8 @@ var Ordering = (function () {
     return {
         getAnswer: getAnswer,
         getFeedback: getFeedback,
-        checkAnswer: checkAnswer
+        checkAnswer: checkAnswer,
+        onChange: onChange
     };
 
 }());

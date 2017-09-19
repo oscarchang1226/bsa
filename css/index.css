@@ -1,3 +1,6 @@
+/*
+    Quiz Main Style
+*/
 * {
     box-sizing: border-box;
     font-family: 'Hind Siliguri',Helvetica,sans-serif;
@@ -8,10 +11,14 @@
     flex-wrap: wrap;
 }
 body {
-    max-height: 432px;
+    height: 432px;
     max-width: 768px;
     margin: 0 auto;
     overflow: hidden;
+    overflow-y: auto;
+}
+main {
+    max-height: 360px;
     overflow-y: auto;
 }
 ul {
@@ -229,15 +236,18 @@ div.question-nodes-container i.material-icons {
     color: rgba(0,0,0,.4);
     display: none;
 }
-div.answer-nodes.empty i.material-icons,
+/*div.answer-nodes.empty i.material-icons,
 div.question-nodes-container.empty i.material-icons {
+    display: block;
+}*/
+div.answer-nodes.empty i.material-icons {
     display: block;
 }
 div.question-nodes-container.empty {
     width: calc(50% - 8px);
     margin: 0 8px 0 0;
     border-radius: 4px;
-    border: 1px solid rgba(0,0,0,.4);
+    /*border: 1px solid rgba(0,0,0,.4);*/
     display: flex;
 }
 div.question-nodes-container.empty i.material-icons {

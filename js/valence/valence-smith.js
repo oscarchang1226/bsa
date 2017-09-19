@@ -25,6 +25,7 @@
 
 var LEVERSION = '1.25',
     BASVERSION = '1.10',
+    LPVERSION = '1.18',
     SMI = SMI || {};
 SMI.getAppContext = function () {
     'use strict';
@@ -48,7 +49,15 @@ SMI.endpoints = {
     issue_award: function (ou) {
         'use strict';
         return '/d2l/api/bas/' + BASVERSION + '/orgunits/' + ou + '/issued/';
+    },
+    who_am_i: function () {
+        'use strict';
+        return '/d2l/api/lp/' + LPVERSION + '/users/whoami';
     }
+};
+SMI.whoAmI = function (cb) {
+    'use strict';
+    return $.get(SMI.endpoints.who_am_i(), cb);
 };
 SMI.preCall = function (cb) {
     'use strict';

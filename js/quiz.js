@@ -1,49 +1,45 @@
 /*jslint browser: true*/
 /*global $, jQuery, CSVal, console */
 
-/*
-CSVal.init();obj = {
-      "Comments": {"Content": "Go to MyEducator for more details.", "Type": "Text"},
-      "PrivateComments": {"Content": "Go to MyEducator to see any private comments", "Type": "Text"},
-      "GradeObjectType": 1,
-      "PointsNumerator": 5
-};url = '/d2l/api/le/1.25/7143/grades/703/values/204';valence_req.put(url).send(obj).use(valence_auth).end((err, res) => console.log(res));
-*/
+var $ = jQuery,
+    CSVal = CSVal || {},
+    savedActivity = [],
+    savedScores = 0,
+    maxScore = 0,
+    currentIndex = 0,
+    currentModel = null,
+    currentQuestion = null,
+    quizData = {},
+    SELECTORS = {
+        header: '.header',
+        content: '.content',
+        feedbacks: '.feedbacks'
+    },
+    ICON_NAMES = {
+        correct: 'done',
+        wrong: 'clear',
+        partial: 'timelapse'
+    },
+    ou, ui;
 
-var $ = jQuery;
-var CSVal = CSVal || {};
-// try {
-//     CSVal.init();
-// } catch (e) {
-//     console.error('Valence not initiated', e);
-// }
-$.getJSON('data/api-dummy.json', function (data) {
-    CSVal = data;
-});
+try {
+    CSVal.init();
+} catch (e) {
+    console.error('Valence not initiated', e);
+}
+// $.getJSON('data/api-dummy.json', function (data) {
+//     CSVal = data;
+// });
 
-
-var savedActivity = [];
-var savedScores = 0;
-var maxScore = 0;
-var currentIndex = 0;
-var currentModel = null;
-var currentQuestion = null;
-var quizData = {};
-var SELECTORS = {
-    header: '.header',
-    content: '.content',
-    feedbacks: '.feedbacks'
-};
-var ICON_NAMES = {
-    correct: 'done',
-    wrong: 'clear',
-    partial: 'timelapse'
-};
+function setUserContext() {
+    SMI.whoAmI(function (d) {
+        ui = d.Identifier;
+    });
+}
 
 /**
     Quiz Pre Functions
 **/
-
 function getQuestionModel(questionType) {
     switch (questionType) {
         case 'Matching':
@@ -89,7 +85,7 @@ function getQuiz(idx) {
 }
 
 function startQuiz() {
-    currentIndex = 1;
+    currentIndex = 0;
     getQuiz(currentIndex);
 }
 
@@ -216,7 +212,7 @@ function finish() {
     console.warn('Finish...');
     var incomingGradeValue = {
         GradeObjectType: 1,
-        PointsNumerator: score,
+        PointsNumerator: savedScores,
         Comments: {
             Content: '',
             Type: 'Text'
@@ -229,14 +225,21 @@ function finish() {
     if (parent && parent.document) {
         var nextButton = parent.document.querySelector('a.d2l-iterator-button-next'),
             cb = function () {
-                if (nextButton) {
-                    return nextButton.click();
-                }
+
+                return parent.document.querySelector('a.d2l-iterator-button-next').click();
             };
-        return SMI.put_grades(7143, 703, 213, incomingGradeValue, cb);
+        if (nextButton) {
+            SMI.putGrades(ou, quizData.General.gradeId, ui, incomingGradeValue, cb);
+        } else {
+            // TODO: Maybe use a dialog for this
+            console.warn('Cannot find next button');
+            console.log(incomingGradeValue);
+        }
+    } else {
+        // TODO: Maybe use a dialog for this
+        console.warn('Cannot find next button');
+        console.log(incomingGradeValue);
     }
-    // TODO: Maybe use a dialog for this
-    console.warn('Cannot find next button');
 }
 
 /**
@@ -257,7 +260,7 @@ function getPreQuizButtons() {
 
 function getPostQuizButtons() {
     var finishButton = {
-        label: 'Finish Quiz',
+        label: 'Next Topic',
         className: 'finish'
         },
         buttons = [],
@@ -551,7 +554,7 @@ function getQuestion(model, general, data) {
 
 function getFeedback(model, general, result) {
     var title = document.createElement('h2');
-    title.appendChild(document.createTextNode('Results: '));
+    title.appendChild(document.createTextNode('Result '));
     title.classList.add('feedback-title');
 
     var score = document.createElement('h3');
@@ -649,4 +652,13 @@ function getIcon(text, onclick) {
         el.setAttribute('onclick', onclick);
     }
     return el;
+}
+
+/**
+    Events
+**/
+function onChange(e) {
+    if (currentModel.onChange) {
+        currentModel.onChange(e);
+    }
 }
