@@ -214,9 +214,29 @@ function endQuiz() {
 function finish() {
     // TODO: click parent frame next button
     console.warn('Finish...');
-    console.log(SMI);
-    console.log(savedScores);
-    console.log(maxScore);
+    var incomingGradeValue = {
+        GradeObjectType: 1,
+        PointsNumerator: score,
+        Comments: {
+            Content: '',
+            Type: 'Text'
+        },
+        PrivateComments: {
+            Content: '',
+            Type: 'Text'
+        }
+    };
+    if (parent && parent.document) {
+        var nextButton = parent.document.querySelector('a.d2l-iterator-button-next'),
+            cb = function () {
+                if (nextButton) {
+                    return nextButton.click();
+                }
+            };
+        return SMI.put_grades(7143, 703, 213, incomingGradeValue, cb);
+    }
+    // TODO: Maybe use a dialog for this
+    console.warn('Cannot find next button');
 }
 
 /**

@@ -17,18 +17,10 @@ var Ordering = (function () {
     }
 
     function onChange(e) {
-        var val = e.currentTarget.value,
-            nam = e.currentTarget.name;
-        if (val) {
-            e.currentTarget
-                .parentElement
-                .querySelectorAll('select:not([name="' + nam + '"])option')
-                .forEach(function (o) {
-                    if (o === val) {
-                        o.selected = false;
-                    }
-                });
-        }
+        // reenable all options
+        // get select values with select name
+        // for each value and select name
+        // disable all option with value and not same name
     }
 
     function getSelects(i) {

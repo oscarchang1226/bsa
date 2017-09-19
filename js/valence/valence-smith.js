@@ -55,11 +55,16 @@ SMI.preCall = function (cb) {
     // $.get('/d2l/lp/auth/xsrf-tokens', cb);
     cb({'hitCodePrefix': '-1315665569', 'referrerToken': 'Znpl0OTAb63pYv88SK92DaKkwZsArud9'});
 };
-SMI.issueAward = function (ou, data) {
+SMI.issueAward = function (ou, data, cb) {
     'use strict';
     if (D2L) {
         var url,
             callback;
+        if (typeof cb !== 'function') {
+            cb = function (x) {
+                console.log(x);
+            };
+        }
         url = SMI.endpoints.issue_award(ou);
         url = SMI.getUserContext().createUrlForAuthentication(url, 'POST');
         callback = function (d) {
@@ -67,7 +72,7 @@ SMI.issueAward = function (ou, data) {
                 {
                     type: 'POST',
                     url: url,
-                    success: function (x) { console.log(x); },
+                    success: cb,
                     error: function (x) { console.log(x); },
                     contentType: "application/json",
                     dataType: 'json',
@@ -84,11 +89,16 @@ SMI.issueAward = function (ou, data) {
     }
     return null;
 };
-SMI.putGrades = function (ou, gi, ui, data) {
+SMI.putGrades = function (ou, gi, ui, data, cb) {
     'use strict';
     if (D2L) {
         var url,
             callback;
+        if (typeof cb !== 'function') {
+            cb = function (x) {
+                console.log(x);
+            };
+        }
         url = SMI.endpoints.put_grades(ou, gi, ui);
         url = SMI.getUserContext().createUrlForAuthentication(url, 'PUT');
         callback = function (d) {
@@ -96,8 +106,8 @@ SMI.putGrades = function (ou, gi, ui, data) {
                 {
                     type: 'PUT',
                     url: url,
-                    success: function (x) { console.log(x); },
-                    error: function (x) { console.log(x); },
+                    success: cb,
+                    error: function (x) { console.error(x); },
                     contentType: "application/json",
                     dataType: 'json',
                     headers: {
