@@ -12,19 +12,6 @@ var Arithmetic = (function () {
     var INST = 'Fill in the blanks with appropriate answers.',
         REGEX = /^[a-zA-Z\?\[\]:;\\<>|()@#$%\^&!`"' ]$/;
 
-    function getActionContainer(buttons, className) {
-        var el = document.createElement('div');
-        el.classList.add(className);
-        buttons.forEach(function (button) {
-            var buttonEl = document.createElement('button');
-            buttonEl.appendChild(document.createTextNode(button.label));
-            buttonEl.classList.add(button.className);
-            buttonEl.setAttribute('onclick', button.onclick);
-            el.appendChild(buttonEl);
-        });
-        return el;
-    }
-
     function getRegex(flag) {
         return new RegExp(/(BLANK[\d]*)/, flag);
     }
@@ -123,7 +110,7 @@ var Arithmetic = (function () {
         ];
     }
 
-    function getFeedback(result, actionContainer) {
+    function getFeedback(result) {
         var correctAnswer = document.createElement('p'),
             selectedAnswer = document.createElement('p');
 
@@ -135,8 +122,7 @@ var Arithmetic = (function () {
 
         return [
             correctAnswer,
-            selectedAnswer,
-            actionContainer
+            selectedAnswer
         ];
     }
 

@@ -76,7 +76,7 @@ var Ordering = (function () {
         return el;
     }
 
-    function getAnswer(actionContainer, data) {
+    function getAnswer(data) {
         /**
         "answers": [
             {
@@ -96,12 +96,11 @@ var Ordering = (function () {
             answerContainer = getAnswerContainer(data.answers);
         }
         return [
-            answerContainer,
-            actionContainer
+            answerContainer
         ];
     }
 
-    function getFeedback(result, actionContainer) {
+    function getFeedback(result) {
         var h2 = document.createElement('h2'),
             div = document.createElement('div'),
             span,
@@ -130,8 +129,7 @@ var Ordering = (function () {
         });
         return [
             h2,
-            div,
-            actionContainer
+            div
         ];
     }
 

@@ -11,7 +11,7 @@ var AllThatApply = (function () {
 
     /*jslint browser:true */
 
-    function getAnswer(actionContainer, data) {
+    function getAnswer(data) {
         // answers: [{
         //   "answerText": "Jem",
         //   "feedBack": "Correct! Jem is Atticus' son.",
@@ -35,7 +35,6 @@ var AllThatApply = (function () {
             div.appendChild(label);
             return div;
         });
-        answers.push(actionContainer);
         return answers;
     }
 
@@ -100,7 +99,7 @@ var AllThatApply = (function () {
         };
     }
 
-    function getFeedback(result, actionContainer) {
+    function getFeedback(result) {
         var correctAnswer = getResult(result, true),
             selectedAnswer = getResult(result),
             ul = document.createElement('ul'),
@@ -116,8 +115,7 @@ var AllThatApply = (function () {
             correctAnswer,
             selectedAnswer,
             title,
-            ul,
-            actionContainer
+            ul
         ];
     }
 

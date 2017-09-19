@@ -47,7 +47,7 @@ var FillInTheBlank = (function () {
         }
         if (e.key === 'Enter') {
             e.target.value = e.target.value.trim();
-            var checkAnswerButton = document.querySelector('.answer-actions button.submit');
+            var checkAnswerButton = document.querySelector('.actions button.submit');
             if (checkAnswerButton) {
                 checkAnswerButton.click();
             }
@@ -101,7 +101,7 @@ var FillInTheBlank = (function () {
         ];
     }
 
-    function getFeedback(result, actionContainer) {
+    function getFeedback(result) {
         var correctAnswer = document.createElement('p'),
             selectedAnswer = document.createElement('p');
         correctAnswer.innerHTML = '<b>Correct Answer: </b>' + result.correctAnswer;
@@ -112,8 +112,7 @@ var FillInTheBlank = (function () {
 
         return [
             correctAnswer,
-            selectedAnswer,
-            actionContainer
+            selectedAnswer
         ];
     }
 

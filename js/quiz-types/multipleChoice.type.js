@@ -9,7 +9,7 @@ var MultipleChoice = (function () {
     'use strict';
     /*jslint browser: true */
 
-    function getAnswer(actionContainer, data) {
+    function getAnswer(data) {
         /**
         answers: [
         {
@@ -36,7 +36,6 @@ var MultipleChoice = (function () {
                 return div;
             });
         div.classList.add('answer-container');
-        answers.push(actionContainer);
         return answers;
     }
 
@@ -109,15 +108,14 @@ var MultipleChoice = (function () {
         return el;
     }
 
-    function getFeedback(result, actionContainer) {
+    function getFeedback(result) {
         var correctAnswer = getResult(result, 'c'),
             selectedAnswer = getResult(result, 's'),
             feedback = getResult(result, 'f');
         return [
             correctAnswer,
             selectedAnswer,
-            feedback,
-            actionContainer
+            feedback
         ];
     }
 

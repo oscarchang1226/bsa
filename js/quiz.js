@@ -4,8 +4,8 @@
 var $ = jQuery,
     CSVal = CSVal || {},
     savedActivity = [],
-    savedScores = 0,
-    maxScore = 0,
+    savedScores = [],
+    savedMaxScore = [],
     currentIndex = 0,
     currentModel = null,
     currentQuestion = null,
@@ -13,23 +13,59 @@ var $ = jQuery,
     SELECTORS = {
         header: '.header',
         content: '.content',
-        feedbacks: '.feedbacks'
+        feedbacks: '.feedbacks',
+        actions: '.actions'
     },
     ICON_NAMES = {
         correct: 'done',
         wrong: 'clear',
         partial: 'timelapse'
     },
-    ou, ui;
+    BUTTONS = {
+        startQuiz: {
+            label: 'Start',
+            className: 'start-quiz'
+        },
+        finish: {
+            label: 'Next Topic',
+            className: 'finish'
+        },
+        resetAll: {
+            label: 'Reset',
+            className: 'reset'
+        },
+        checkAnswer: {
+            label: 'Submit',
+            className: 'submit'
+        },
+        hint: {
+            label: 'Hint',
+            className: 'hint'
+        },
+        previous: {
+            label: 'Back',
+            className: 'back'
+        },
+        cont: {
+            label: 'Next',
+            className: 'next'
+        },
+        endQuiz: {
+            label: 'Next',
+            className: 'end-quiz'
+        }
+    },
+    ou,
+    ui;
 
-try {
-    CSVal.init();
-} catch (e) {
-    console.error('Valence not initiated', e);
-}
-// $.getJSON('data/api-dummy.json', function (data) {
-//     CSVal = data;
-// });
+// try {
+//     CSVal.init();
+// } catch (e) {
+//     console.error('Valence not initiated', e);
+// }
+$.getJSON('data/api-dummy.json', function (data) {
+    CSVal = data;
+});
 
 function setUserContext() {
     SMI.whoAmI(function (d) {
@@ -77,6 +113,7 @@ function getQuiz(idx) {
             repopulateContainer(SELECTORS.header, questionEl);
             repopulateContainer(SELECTORS.content, answerEl);
             repopulateContainer(SELECTORS.feedbacks);
+            repopulateContainer(SELECTORS.actions, getQuizButtons(quizData));
         } else {
             // TODO: Notification question model not found
             console.error('No Model of '+ currentQuestion.questionType);
@@ -85,6 +122,7 @@ function getQuiz(idx) {
 }
 
 function startQuiz() {
+    initialSaved();
     currentIndex = 0;
     getQuiz(currentIndex);
 }
@@ -112,24 +150,13 @@ function getPreQuiz(data) {
     if (pre) {
         elList.push(pre);
     }
-    if (elList.length > 0) {
-        temp = document.createElement('div');
-        temp.classList.add('answer-actions');
-        getPreQuizButtons().forEach(function (b) {
-            temp.appendChild(b);
-        });
-        elList.push(temp);
-    } else {
-        elList = null;
-    }
     return elList;
 }
 
 function getPostQuiz(data, containerParent) {
     var text,
         medias,
-        elList = [],
-        temp;
+        elList = [];
     if (havePostQuizText(data.General)) {
         text = getText(data.General.postQuizText, 'quiz-post-text');
         elList.push(text);
@@ -142,12 +169,6 @@ function getPostQuiz(data, containerParent) {
         });
         elList.push(medias);
     }
-    temp = document.createElement('div');
-    temp.classList.add('answer-actions');
-    getPostQuizButtons(data).forEach(function (b) {
-        temp.appendChild(b);
-    });
-    elList.push(temp);
     return elList;
 }
 
@@ -202,17 +223,18 @@ function endQuiz() {
             SELECTORS.content,
             getPostQuiz(quizData, SELECTORS.content)
         );
+        repopulateContainer(SELECTORS.actions, getPostQuizButtons());
     } else {
         finish();
     }
 }
 
 function finish() {
-    // TODO: click parent frame next button
-    console.warn('Finish...');
     var incomingGradeValue = {
         GradeObjectType: 1,
-        PointsNumerator: savedScores,
+        PointsNumerator: savedScores.reduce(function (acc, score) {
+            return acc + score;
+        }, 0),
         Comments: {
             Content: '',
             Type: 'Text'
@@ -224,9 +246,12 @@ function finish() {
     };
     if (parent && parent.document) {
         var nextButton = parent.document.querySelector('a.d2l-iterator-button-next'),
-            cb = function () {
-
-                return parent.document.querySelector('a.d2l-iterator-button-next').click();
+            cb = function (res, err) {
+                if (res.status === 200) {
+                    return parent.document.querySelector('a.d2l-iterator-button-next').click();
+                } else {
+                    console.error(res.statusText, err);
+                }
             };
         if (nextButton) {
             SMI.putGrades(ou, quizData.General.gradeId, ui, incomingGradeValue, cb);
@@ -247,92 +272,42 @@ function finish() {
 */
 
 function getPreQuizButtons() {
-    var startQuizButton = {
-            label: 'Start Quiz',
-            className: 'start-quiz'
-        },
-        buttons = [],
-        button;
-    button = getButtonElement(startQuizButton);
-    buttons.push(button);
-    return buttons;
+    return [getButtonElement(BUTTONS.startQuiz)];
 }
 
 function getPostQuizButtons() {
-    var finishButton = {
-        label: 'Next Topic',
-        className: 'finish'
-        },
-        buttons = [],
-        button;
-    button = getButtonElement(finishButton);
-    buttons.push(button);
-    return buttons;
+    var temp = BUTTONS.startQuiz;
+    temp.label = 'Restart';
+    return [getButtonElement(temp), getButtonElement(BUTTONS.finish)];
 }
 
-function getAnswerButtons(data) {
-    var resetAllButton = {
-            label: 'Reset All',
-            className: 'reset'
-        },
-        checkAnswerButton = {
-            label: 'Check Answers',
-            className: 'submit'
-        },
-        hintButton = {
-            label: 'Hint',
-            className: 'hint'
-        },
-        previousButton = {
-            label: 'Go Back',
-            className: 'back'
-        },
-        buttons = [],
-        button;
+function getQuizButtons(data) {
+    var buttons = [];
     if (currentIndex > 0 && data.General.allowPrevious) {
-        buttons.push(previousButton);
+        buttons.push(getButtonElement(BUTTONS.previous));
     }
-    if (currentQuestion.reset) {
-        buttons.push(resetAllButton);
+    if (data.General.allowReset || currentQuestion.reset) {
+        buttons.push(getButtonElement(BUTTONS.resetAll));
     }
-    if (data.General.showHints &&
-        ((currentQuestion.hintText && currentQuestion.hintText.toUpperCase() !== 'NONE') ||
-        (currentQuestion.hintMedia && currentQuestion.hintMedia.toUpperCase() !== 'NONE'))
-    ) {
-        buttons.push(hintButton);
-    }
-    buttons.push(checkAnswerButton);
-    buttons = buttons.map(function (b) {
-        return getButtonElement(b);
-    });
-    return buttons;
-}
-
-function getFeedbackButtons(data) {
-    var contButton = {
-            label: 'Continue',
-            className: 'next'
-        },
-        endQuizButton = {
-            label: 'End Quiz',
-            className: 'end-quiz'
-        },
-        finishButton = {
-            label: 'Next Topic',
-            className: 'finish'
-        },
-        buttons = [],
-        button;
-    if (currentIndex === data.Questions.length-1) {
-        if (havePostQuiz(data)) {
-            button = getButtonElement(endQuizButton);
+    if (savedActivity[currentIndex] || savedScores[currentIndex] !== null) {
+        if (currentIndex === data.Questions.length-1) {
+            if (havePostQuiz(data)) {
+                buttons.push(getButtonElement(BUTTONS.endQuiz));
+            } else {
+                buttons.push(getButtonElement(BUTTONS.finish));
+            }
         } else {
-            button = getButtonElement(finishButton);
+            buttons.push(getButtonElement(BUTTONS.cont));
         }
     } else {
-        button = getButtonElement(contButton);
+        if (data.General.showHints &&
+            ((currentQuestion.hintText && currentQuestion.hintText.toUpperCase() !== 'NONE') ||
+            (currentQuestion.hintMedia && currentQuestion.hintMedia.toUpperCase() !== 'NONE'))
+        ) {
+            buttons.push(getButtonElement(BUTTONS.hint));
+        }
+        buttons.push(getButtonElement(BUTTONS.checkAnswer));
     }
-    buttons.push(button);
     return buttons;
 }
 
@@ -345,7 +320,7 @@ function getButtonElement(obj) {
 }
 
 function addButtonEvents() {
-    document.querySelectorAll('div.answer-actions button, div.feedback-actions button').forEach(function (b) {
+    document.querySelectorAll('div.answer-actions button, div.feedback-actions button, div.actions button').forEach(function (b) {
         b.addEventListener('click', getButtonEvent(b.className));
     });
 }
@@ -378,13 +353,25 @@ function getButtonEvent(className) {
 
 
 function getQuizHeader(data) {
-    var tag = 'h'+ (data.General.HeadingLevel || 1);
-    var el = createElement(tag, data.General.QuizName || 'Quiz');
+    var tag = 'h'+ (data.General.HeadingLevel || 1),
+        el = document.createElement(tag);
+    el.appendChild(document.createTextNode(data.General.QuizName || 'Quiz'));
     return el;
 }
 
 function setQuizHeader(el) {
     $('header').empty().append(el);
+}
+
+function initialSaved() {
+    savedActivity = [], savedScores = [], savedMaxScore = [];
+    quizData.Questions.forEach(
+        function () {
+            savedActivity.push(null);
+            savedScores.push(null);
+            savedMaxScore.push(null);
+        }
+    );
 }
 
 function buildQuiz(jsonFile) {
@@ -396,31 +383,19 @@ function buildQuiz(jsonFile) {
                 return !q.skip;
             }
         );
-        quizData.Questions.forEach(
-            function () {
-                return savedActivity.push(null);
-            }
-        );
         var quizHeader = getQuizHeader(quizData);
         setQuizHeader(quizHeader);
         var preQuiz = getPreQuiz(quizData);
         repopulateContainer(SELECTORS.content, preQuiz);
-        // getQuiz(currentIndex);
+        var preQuizButtons = getPreQuizButtons();
+        repopulateContainer(SELECTORS.actions, preQuizButtons);
     });
 }
 
 function getAnswer(model, data, question) {
-    var buttons = getAnswerButtons(data),
-        answerEl = [],
-        actionContainer = document.createElement('div');
-        actionContainer.classList.add('answer-actions');
-        buttons.forEach(function (button) {
-            actionContainer.appendChild(button);
-        });
+    var answerEl = [];
     if (model.getAnswer) {
-        answerEl = model.getAnswer(actionContainer, question, data);
-    } else {
-        answerEl.push(actionContainer);
+        answerEl = model.getAnswer(question, data);
     }
     return answerEl;
 }
@@ -431,10 +406,13 @@ function checkAnswer() {
     if (currentModel.checkAnswer) {
         // TODO: Implement model check answer with current question data
         result = currentModel.checkAnswer(currentQuestion);
-        savedScores += result.score;
-        maxScore += result.maxScore;
+        savedScores[currentIndex] = result.score;
+        if (!savedMaxScore[currentIndex]) {
+            savedMaxScore[currentIndex] = result.maxScore;
+        }
         var feedbackEl = getFeedback(currentModel, quizData, result);
         repopulateContainer(SELECTORS.feedbacks, feedbackEl);
+        repopulateContainer(SELECTORS.actions, getQuizButtons(quizData));
     } else {
         // TODO: proceed with default checking
         console.error('No default checking.');
@@ -442,12 +420,13 @@ function checkAnswer() {
 }
 
 function getHint() {
-    // TODO: show hint for current question
-    var text = getText(currentQuestion.hintText, 'hint-text');
-    var medias = getHintMedia(currentQuestion.hintMedia);
-    var backdrop = createElement('div', null, {className: 'dialog-backdrop'});
-    var dialog = createElement('div', null, {className: 'dialog'});
-    var closeIcon = getIcon(ICON_NAMES.wrong);
+    var text = getText(currentQuestion.hintText, 'hint-text'),
+        medias = getHintMedia(currentQuestion.hintMedia),
+        backdrop = document.createElement('div'),
+        dialog = document.createElement('div'),
+        closeIcon = getIcon(ICON_NAMES.wrong);
+    backdrop.classList.add('dialog-backdrop');
+    dialog.classList.add('dialog');
 
     closeIcon.addEventListener('click', closeDialog);
     backdrop.addEventListener('click', closeDialog);
@@ -514,11 +493,9 @@ function nextQuestion() {
 }
 
 function resetAll() {
-    if (currentModel.resetAll) {
-        currentModel.resetAll();
-    } else {
-        getQuiz(currentIndex);
-    }
+    savedActivity[currentIndex] = null;
+    savedScores[currentIndex] = null;
+    getQuiz(currentIndex);
 }
 
 function saveCurrentQuestion() {
@@ -538,9 +515,11 @@ function repopulateContainer(selector, elList) {
 }
 
 function getQuestion(model, general, data) {
-    var title = 'Question ' + (currentIndex + 1) + ' of ' + general.Questions.length;
-    var questionTitle = createElement('h2', title, {className: 'question-title'});
-    var elList;
+    var title = 'Question ' + (currentIndex + 1) + ' of ' + general.Questions.length,
+        questionTitle = document.createElement('h2'),
+        elList;
+    questionTitle.appendChild(document.createTextNode(title));
+    questionTitle.classList.add('question-title');
     if (model && model.getQuestion) {
         elList = model.getQuestion(data, general);
     } else {
@@ -578,18 +557,10 @@ function getFeedback(model, general, result) {
     score.appendChild(document.createTextNode(scoreText));
 
     var feedback = [title, score];
-    var buttons = getFeedbackButtons(general),
-        actionContainer = document.createElement('div');
-        actionContainer.classList.add('feedback-actions');
-        buttons.forEach(function (button) {
-            actionContainer.appendChild(button);
-        });
     if (model && model.getFeedback) {
         feedback = feedback.concat(
-            model.getFeedback(result, actionContainer, general)
+            model.getFeedback(result, general)
         );
-    } else {
-        feedback.push(actionContainer);
     }
     return feedback;
 }
@@ -625,16 +596,6 @@ function createElement(tag, text, options) {
             el[o] = options[o];
         });
     }
-    return el;
-}
-
-function getActionContainer(buttons, className) {
-    var el = createElement('div', null, {className: className});
-    buttons.forEach(function (button) {
-        var buttonEl = createElement('button', button.label, {className: button.className});
-        buttonEl.setAttribute('onclick', button.onclick);
-        el.appendChild(buttonEl);
-    });
     return el;
 }
 

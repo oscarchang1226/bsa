@@ -105,6 +105,7 @@ var Matching = (function () {
         img.setAttribute('alt', node.alt);
         img.setAttribute('src', node.src);
         el.appendChild(img);
+        el.classList.add('media');
         return el;
     }
 
@@ -212,12 +213,11 @@ var Matching = (function () {
         ];
     }
 
-    function getAnswer(actionContainer, data) {
+    function getAnswer(data) {
         selectedItem = undefined;
         return [
             getQuestionNodes(data.QuestionNodes),
-            getAnswerNodes(data.AnswerNodes),
-            actionContainer
+            getAnswerNodes(data.AnswerNodes)
         ];
     }
 
@@ -293,11 +293,8 @@ var Matching = (function () {
         return feedbacks;
     }
 
-    function getFeedback(result, actionContainer) {
+    function getFeedback(result) {
         var feedbacks = getFeedbackElements(result.result);
-        feedbacks.push(
-            actionContainer
-        );
         return feedbacks;
     }
 
@@ -333,8 +330,6 @@ var Matching = (function () {
             answerLegend = {},
         // Keeping track of score and overall correctness
             score = 0,
-            isCorrect,
-            answerNodeDropzones = document.querySelectorAll('.answer-nodes .dropzone'),
             result = [];
 
         // Generate answer legend
@@ -347,68 +342,41 @@ var Matching = (function () {
             };
         });
 
-        // Map all list item in answer dropzones and validate answer
-        answerNodeDropzones.forEach(function (ul) {
-
-            // Get answer node key
-            var key = ul.id,
-            // Get answer node title
-                title = ul.previousSibling.innerHTML,
-            // Map all default question values with validation and feedbacks
-                lis = [],
-                li,
-                temp;
-            for (li = 0; li < ul.children.length; li += 1) {
-
-                // Get default question values
-                temp = all[ul.children[li].id];
-
-                // Validate answer
-                temp.isCorrect = temp.answer === key;
-
-                // Update overall correctness
-                isCorrect = isCorrect === undefined ? temp.isCorrect : isCorrect && temp.isCorrect;
-
-
-                if (temp.isCorrect) {
-                    // Add correct feedback if is correct
-                    temp.feedback = temp.correct;
-
-                    // Update score
-                    score += temp.scoreValue || 0;
-
-                } else {
-                    // Add wrong feedback is is incorrect
-                    // Add correct answer if provided
-                    temp.feedback = temp.wrong;
-                    if (temp.answer) {
-                        temp.correctAnswer = answerLegend[temp.answer].title;
-                    }
-                }
-
-                // return default question values with
-                // feddback, isCorrect, correctAnswer
-                lis.push(temp);
-            }
-
-            // return item key, title, correctness, question values with feedback
+        document.querySelectorAll('.answer-nodes .dropzone').forEach(function (ul) {
             result.push({
-                key: key,
-                title: title,
-                lis: lis,
-
-                // Get this answer list correctness only
-                isCorrect: lis.reduce(function (acc, cur) {
-                    return acc && cur.isCorrect;
-                }, lis.length === answerLegend[key].answers.length)
+                key: ul.id,
+                title: ul.previousSibling.innerHTML,
+                lis: []
             });
         });
 
-        // If overall correctness is correct give max score
-        // score = Math.round(score);
-        if (isCorrect) {
-            score = data.maxScoreValue;
-        }
+        document.querySelectorAll('.dropzone li').forEach(function (li) {
+            var q = data.QuestionNodes[li.id],
+                p = li.parentElement,
+                r = (p.id || false) === (q.answer || false),
+                temp;
+            q.feedback = r ? q.correct : q.wrong;
+            q.isCorrect = r;
+            if (!r) {
+                if (q.answer) {
+                    q.correctAnswer = answerLegend[q.answer].title;
+                }
+            } else {
+                score += q.scoreValue;
+            }
+            temp = result.filter(function (re) {
+                return re.key === p.id;
+            });
+            if (temp.length === 1) {
+                temp[0].lis.push(q);
+                if (temp[0].isCorrect === undefined) {
+                    temp[0].isCorrect = r;
+                } else {
+                    temp[0].isCorrect = temp[0].isCorrect && r;
+                }
+            }
+        });
+
         return {
             result: result,
             score: score,

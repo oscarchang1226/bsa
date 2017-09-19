@@ -11,14 +11,14 @@
     flex-wrap: wrap;
 }
 body {
-    height: 432px;
+    height: 580px;
     max-width: 768px;
     margin: 0 auto;
     overflow: hidden;
     overflow-y: auto;
 }
 main {
-    max-height: 360px;
+    max-height: 508px;
     overflow-y: auto;
 }
 ul {
@@ -30,7 +30,7 @@ p, span, i, b, div, input, label, li {
 }
 button {
     font-size: 16px;
-    width: 140px;
+    width: 90px;
     height: 32px;
     border-radius: 4px;
     border-style: none;
@@ -38,7 +38,7 @@ button {
     background-color: #DD3326;
     cursor: pointer;
     text-transform: capitalize;
-    margin: 0 0 0 8px;
+    margin: 16px 0 0 8px;
 }
 button:hover,
 button:focus {
@@ -73,8 +73,7 @@ main {
 .header > p {
     margin: 0 0 8px 0;
 }
-.answer-actions,
-.feedback-actions {
+.actions {
     text-align: right;
 }
 .question-title,
@@ -127,8 +126,8 @@ div.answer-container {
     flex-direction: row;
     flex-wrap: wrap;
 }
-div.answer-actions {
-    margin: 8px 0 0 auto;
+div.actions {
+    margin: 0 0 0 auto;
 }
 .feedback-list li {
     padding: 2px 0 2px 4px;
@@ -179,9 +178,23 @@ ul.dropzone {
     list-style-type: none;
     padding: 0;
     border-radius: 4px;
+    display: flex;
+    flex-wrap: wrap;
 }
 ul.dropzone li {
+    width: 100%;
     outline: none;
+}
+.question-nodes-container ul.dropzone li.media {
+    width: calc((100% / 3) - 8px);
+}
+.question-nodes-container ul.dropzone li.media > *,
+.answer-nodes-container ul.dropzone li.media  > * {
+    width: 100%;
+}
+.answer-nodes-container ul.dropzone li.media {
+    width: calc(100% / 3);
+    margin: auto;
 }
 ul.dropzone li:hover,
 ul.dropzone li:focus,
@@ -223,6 +236,9 @@ div.answer-nodes h4 {
 }
 div.answer-nodes ul li {
     line-height: 14px;
+    padding: 4px;
+}
+div.answer-nodes ul li.not(.media) {
     padding: 4px 4px 8px 8px;
     border-bottom: 1px solid rgba(0,0,0,.4);
 }

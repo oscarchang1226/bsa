@@ -70,8 +70,10 @@ SMI.issueAward = function (ou, data, cb) {
         var url,
             callback;
         if (typeof cb !== 'function') {
-            cb = function (x) {
-                console.log(x);
+            cb = function (res, err) {
+                if (res.status !== 200) {
+                    console.error(res.statusText, err);
+                }
             };
         }
         url = SMI.endpoints.issue_award(ou);
@@ -81,8 +83,7 @@ SMI.issueAward = function (ou, data, cb) {
                 {
                     type: 'POST',
                     url: url,
-                    success: cb,
-                    error: function (x) { console.log(x); },
+                    complete: cb,
                     contentType: "application/json",
                     dataType: 'json',
                     headers: {
@@ -104,8 +105,10 @@ SMI.putGrades = function (ou, gi, ui, data, cb) {
         var url,
             callback;
         if (typeof cb !== 'function') {
-            cb = function (x) {
-                console.log(x);
+            cb = function (res, err) {
+                if (res.status !== 200) {
+                    console.error(res.statusText, err);
+                }
             };
         }
         url = SMI.endpoints.put_grades(ou, gi, ui);
@@ -115,9 +118,7 @@ SMI.putGrades = function (ou, gi, ui, data, cb) {
                 {
                     type: 'PUT',
                     url: url,
-                    success: cb,
-                    error: function (x) { console.error(x); },
-                    contentType: "application/json",
+                    complete: cb,
                     dataType: 'json',
                     headers: {
                         Accept: 'application/json',
