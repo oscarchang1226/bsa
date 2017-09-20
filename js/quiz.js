@@ -320,24 +320,34 @@ function getPostQuizButtons() {
 }
 
 function getQuizButtons(data) {
-    var buttons = [];
+    var buttons = [],
+        temp;
     if (currentIndex > 0 && data.General.allowPrevious) {
         buttons.push(getButtonElement(BUTTONS.previous));
-    }
-    if (data.General.allowReset || currentQuestion.reset) {
-        buttons.push(getButtonElement(BUTTONS.resetAll));
     }
     if (savedActivity[currentIndex] || savedScores[currentIndex] !== null) {
         if (currentIndex === data.Questions.length-1) {
             if (havePostQuiz(data)) {
+                if (data.General.allowReset || currentQuestion.reset) {
+                    buttons.push(getButtonElement(BUTTONS.resetAll));
+                }
                 buttons.push(getButtonElement(BUTTONS.endQuiz));
             } else {
+                temp = BUTTONS.startQuiz;
+                temp.label = 'Restart';
+                buttons.push(getButtonElement(temp));
                 buttons.push(getButtonElement(BUTTONS.finish));
             }
         } else {
+            if (data.General.allowReset || currentQuestion.reset) {
+                buttons.push(getButtonElement(BUTTONS.resetAll));
+            }
             buttons.push(getButtonElement(BUTTONS.cont));
         }
     } else {
+        if (data.General.allowReset || currentQuestion.reset) {
+            buttons.push(getButtonElement(BUTTONS.resetAll));
+        }
         if (data.General.showHints &&
             ((currentQuestion.hintText && currentQuestion.hintText.toUpperCase() !== 'NONE') ||
             (currentQuestion.hintMedia && currentQuestion.hintMedia.toUpperCase() !== 'NONE'))
@@ -421,6 +431,11 @@ function buildQuiz(jsonFile) {
                 return !q.skip;
             }
         );
+        SMI.getGrade(ou, quizData.General.gradeId, function (res) {
+            if (res.status === 200) {
+                gradeObject = res.responseJSON;
+            }
+        });
         var quizHeader = getQuizHeader(quizData);
         setQuizHeader(quizHeader);
         var callback = function (d) {
@@ -428,15 +443,10 @@ function buildQuiz(jsonFile) {
             if (d.status === 200) {
                 gradedScoreObject = d.responseJSON;
             }
-            SMI.getGrade(ou, quizData.General.gradeId, function (res) {
-                if (res.status === 200) {
-                    gradeObject = res.responseJSON;
-                }
-                var preQuiz = getPreQuiz(quizData);
-                var preQuizButtons = getPreQuizButtons();
-                repopulateContainer(SELECTORS.content, preQuiz);
-                repopulateContainer(SELECTORS.actions, preQuizButtons);
-            });
+            var preQuiz = getPreQuiz(quizData);
+            var preQuizButtons = getPreQuizButtons();
+            repopulateContainer(SELECTORS.content, preQuiz);
+            repopulateContainer(SELECTORS.actions, preQuizButtons);
         }
         SMI.getUserGrade(ou, quizData.General.gradeId, ui, callback);
     });
@@ -531,7 +541,7 @@ function closeDialog(e) {
     if (e instanceof Event) {
         if (this != e.target) {
             return;
-        }    
+        }
     }
     document.querySelector('.dialog-backdrop').remove();
 }
