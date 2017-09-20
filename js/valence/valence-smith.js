@@ -42,9 +42,13 @@ SMI.getUserContext = function () {
     return SMI.getAppContext().createUserContextWithValues(c, d, e, f);
 };
 SMI.endpoints = {
-    put_grades: function (ou, gi, ui) {
+    user_grade: function (ou, gi, ui) {
         'use strict';
         return '/d2l/api/le/' + LEVERSION + '/' + ou + '/grades/' + gi + '/values/' + ui;
+    },
+    grade: function (ou, gi) {
+        'use strict';
+        return '/d2l/api/le/' + LEVERSION + '/' + ou + '/grades/' + gi;
     },
     issue_award: function (ou) {
         'use strict';
@@ -99,7 +103,7 @@ SMI.issueAward = function (ou, data, cb) {
     }
     return null;
 };
-SMI.putGrades = function (ou, gi, ui, data, cb) {
+SMI.getGrade = function (ou, gi, cb) {
     'use strict';
     if (D2L) {
         var url,
@@ -111,7 +115,65 @@ SMI.putGrades = function (ou, gi, ui, data, cb) {
                 }
             };
         }
-        url = SMI.endpoints.put_grades(ou, gi, ui);
+        url = SMI.endpoints.grade(ou, gi);
+        url = SMI.getUserContext().createUrlForAuthentication(url, 'GET');
+        callback = function (d) {
+            $.ajax(
+                {
+                    type: 'GET',
+                    url: url,
+                    complete: cb,
+                    headers: {
+                        'X-Csrf-Token': d.referrerToken
+                    }
+                }
+            );
+        };
+        return SMI.preCall(callback);
+    }
+}
+SMI.getUserGrade = function (ou, gi, ui, cb) {
+    'use strict';
+    if (D2L) {
+        var url,
+            callback;
+        if (typeof cb !== 'function') {
+            cb = function (res, err) {
+                if (res.status !== 200) {
+                    console.error(res.statusText, err);
+                }
+            };
+        }
+        url = SMI.endpoints.user_grade(ou, gi, ui);
+        url = SMI.getUserContext().createUrlForAuthentication(url, 'GET');
+        callback = function (d) {
+            $.ajax(
+                {
+                    type: 'GET',
+                    url: url,
+                    complete: cb,
+                    headers: {
+                        'X-Csrf-Token': d.referrerToken
+                    }
+                }
+            );
+        };
+        return SMI.preCall(callback);
+    }
+};
+SMI.putUserGrade = function (ou, gi, ui, data, cb) {
+    'use strict';
+    if (D2L) {
+        var url,
+            callback;
+        if (typeof cb !== 'function') {
+            cb = function (res, err) {
+                if (res.status !== 200) {
+                    console.error(res.statusText, err);
+                }
+            };
+        }
+        url = SMI.endpoints.user_grade(ou, gi, ui);
         url = SMI.getUserContext().createUrlForAuthentication(url, 'PUT');
         callback = function (d) {
             $.ajax(

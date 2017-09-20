@@ -40,6 +40,12 @@ button {
     text-transform: capitalize;
     margin: 16px 0 0 8px;
 }
+button.y {
+    background-color: rgba(70, 170, 70, 1);
+}
+button.finish {
+    width: 120px;
+}
 button:hover,
 button:focus {
     box-shadow: 2px 0px 4px 0px rgba(0,0,0,.4), 0px 2px 4px 0px rgba(0,0,0,.4);
@@ -92,17 +98,16 @@ div.dialog-backdrop {
 }
 div.dialog {
     margin: 20vh auto;
-    width: 70%;
+    max-width: 70%;
     max-height: calc(60vh);
     background-color: rgba(255, 255,255, 1);
     border-radius: 4px;
     box-shadow: 2px 0px 4px 0px rgba(0,0,0,.4), 0px 2px 4px 0px rgba(0,0,0,.4);
     -moz-box-shadow: 2px 0px 4px 0px rgba(0,0,0,.4), 0px 2px 4px 0px rgba(0,0,0,.4);
     -webkit-box-shadow: 2px 0px 4px 0px rgba(0,0,0,.4), 0px 2px 4px 0px rgba(0,0,0,.4);
-    padding: 16px;
 }
 .dialog .close-dialog-button {
-    float: right;
+    margin: auto 4px;
     border-radius: 50%;
     cursor: pointer;
     width: 32px;
@@ -113,12 +118,44 @@ div.dialog {
 .dialog .close-dialog-button:hover {
     background-color: rgba(0,0,0, .1);
 }
-.dialog > *:not(.close-dialog-button) {
-    clear: both;
+.dialog-header {
+    display: flex;
+    border-bottom: 1px solid rgba(0,0,0,.13);
+}
+.dialog-header:first-child {
+    padding: 0 0 0 16px;
+}
+.dialog-header > span {
+    font-size: 28px;
+    width: 100%;
+}
+.dialog-content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+}
+.dialog-content > * {
+    margin: 0 0 8px 0;
+}
+.dialog-content > img,
+.dialog-content > video {
+    margin: auto auto 8px auto;
+    max-width: 100%;
+}
+.dialog-actions {
+    text-align: right;
+    padding: 8px;
+}
+.dialog-actions button {
+    margin: 0 0 0 8px;
 }
 div.content {
     display: flex;
     flex-wrap: wrap;
+}
+div.content > * {
+    width: 100%;
+    margin: 0 0 8px 0;
 }
 div.answer-container {
     width: 100%;
@@ -171,6 +208,10 @@ div.quiz-post-media > * {
     min-width: 0;
     margin: auto auto 8px auto;
     max-width: 100%;
+}
+.graded-text b {
+    font-size: 28px;
+    margin: auto 8px;
 }
 /***************************************************************************/
 /** Matching Type Styles **/

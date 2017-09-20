@@ -7,6 +7,8 @@ var $ = jQuery,
     savedScores = [],
     savedMaxScore = [],
     currentIndex = 0,
+    gradedScoreObject = {},
+    gradeObject = {},
     currentModel = null,
     currentQuestion = null,
     quizData = {},
@@ -27,7 +29,7 @@ var $ = jQuery,
             className: 'start-quiz'
         },
         finish: {
-            label: 'Next Topic',
+            label: 'Submit Grade',
             className: 'finish'
         },
         resetAll: {
@@ -121,9 +123,12 @@ function getQuiz(idx) {
     }
 }
 
-function startQuiz() {
+function startQuiz(i) {
     initialSaved();
-    currentIndex = 0;
+    if (!i || i instanceof Event) {
+        i = 0;
+    }
+    currentIndex = i;
     getQuiz(currentIndex);
 }
 
@@ -149,6 +154,12 @@ function getPreQuiz(data) {
     }
     if (pre) {
         elList.push(pre);
+    }
+    if (elList.length === 0) {
+        elList.push(getText('Click <b>Start</b> to begin your quiz.', 'quiz-instructions'));
+    }
+    if (gradedScoreObject.DisplayedGrade && gradedScoreObject.PointsNumerator) {
+        elList.push(getText('You scored <b>' + gradedScoreObject.DisplayedGrade + '</b> your previous attempt.', 'graded-text'));
     }
     return elList;
 }
@@ -230,41 +241,68 @@ function endQuiz() {
 }
 
 function finish() {
-    var incomingGradeValue = {
-        GradeObjectType: 1,
-        PointsNumerator: savedScores.reduce(function (acc, score) {
+    var score = savedScores.reduce(function (acc, score) {
             return acc + score;
         }, 0),
-        Comments: {
-            Content: '',
-            Type: 'Text'
-        },
-        PrivateComments: {
-            Content: '',
-            Type: 'Text'
-        }
-    };
-    if (parent && parent.document) {
-        var nextButton = parent.document.querySelector('a.d2l-iterator-button-next'),
-            cb = function (res, err) {
-                if (res.status === 200) {
-                    return parent.document.querySelector('a.d2l-iterator-button-next').click();
-                } else {
-                    console.error(res.statusText, err);
+        maxScore = savedMaxScore.reduce(function (acc, score) {
+            return acc + score;
+        }, 0),
+        submitCallBack = function (e) {
+            'use strict';
+            if (this !== e.target) {
+                return;
+            }
+            var incomingGradeValue = {
+                GradeObjectType: 1,
+                PointsNumerator: score,
+                Comments: {
+                    Content: '',
+                    Type: 'Text'
+                },
+                PrivateComments: {
+                    Content: '',
+                    Type: 'Text'
                 }
             };
-        if (nextButton) {
-            SMI.putGrades(ou, quizData.General.gradeId, ui, incomingGradeValue, cb);
-        } else {
-            // TODO: Maybe use a dialog for this
-            console.warn('Cannot find next button');
-            console.log(incomingGradeValue);
-        }
-    } else {
-        // TODO: Maybe use a dialog for this
-        console.warn('Cannot find next button');
-        console.log(incomingGradeValue);
-    }
+            if (parent && parent.document) {
+                var nextButton = parent.document.querySelector('a.d2l-iterator-button-next'),
+                    cb = function (res, err) {
+                        if (res.status === 200) {
+                            closeDialog();
+                            return parent.document.querySelector('a.d2l-iterator-button-next').click();
+                        } else {
+                            console.error(res.statusText, err);
+                        }
+                    };
+                if (nextButton) {
+                    SMI.putUserGrade(ou, quizData.General.gradeId, ui, incomingGradeValue, cb);
+                } else {
+                    // TODO: Maybe use a dialog for this
+                    console.warn('Cannot find next button');
+                    console.log(incomingGradeValue);
+                }
+            } else {
+                // TODO: Maybe use a dialog for this
+                console.warn('Cannot find next button');
+                console.log(incomingGradeValue);
+            }
+        },
+        content = document.createElement('div'),
+        actions = document.createElement('div'),
+        temp;
+    content.appendChild(getText('You scored <b>' + score + ' out of ' + maxScore + '</b>.', 'graded-text'));
+    content.appendChild(getText('Submit your scores?', ''));
+    temp = document.createElement('button');
+    temp.classList.add('y');
+    temp.appendChild(document.createTextNode('Yes'));
+    temp.addEventListener('click', submitCallBack);
+    actions.appendChild(temp);
+    temp = document.createElement('button');
+    temp.classList.add('n');
+    temp.appendChild(document.createTextNode('No'));
+    temp.addEventListener('click', closeDialog);
+    actions.appendChild(temp);
+    showDialog('Quiz Result', content, actions);
 }
 
 /**
@@ -385,10 +423,22 @@ function buildQuiz(jsonFile) {
         );
         var quizHeader = getQuizHeader(quizData);
         setQuizHeader(quizHeader);
-        var preQuiz = getPreQuiz(quizData);
-        repopulateContainer(SELECTORS.content, preQuiz);
-        var preQuizButtons = getPreQuizButtons();
-        repopulateContainer(SELECTORS.actions, preQuizButtons);
+        var callback = function (d) {
+            'use strict';
+            if (d.status === 200) {
+                gradedScoreObject = d.responseJSON;
+            }
+            SMI.getGrade(ou, quizData.General.gradeId, function (res) {
+                if (res.status === 200) {
+                    gradeObject = res.responseJSON;
+                }
+                var preQuiz = getPreQuiz(quizData);
+                var preQuizButtons = getPreQuizButtons();
+                repopulateContainer(SELECTORS.content, preQuiz);
+                repopulateContainer(SELECTORS.actions, preQuizButtons);
+            });
+        }
+        SMI.getUserGrade(ou, quizData.General.gradeId, ui, callback);
     });
 }
 
@@ -422,27 +472,66 @@ function checkAnswer() {
 function getHint() {
     var text = getText(currentQuestion.hintText, 'hint-text'),
         medias = getHintMedia(currentQuestion.hintMedia),
-        backdrop = document.createElement('div'),
+        content = document.createElement('div');
+    content.appendChild(text);
+    medias.forEach(function (m) {
+        content.appendChild(m);
+    });
+    showDialog('Hint', content);
+}
+
+function createDialog(title, content, actions) {
+    var backdrop = document.createElement('div'),
+        header = document.createElement('div'),
+        closeIcon = getIcon(ICON_NAMES.wrong),
         dialog = document.createElement('div'),
-        closeIcon = getIcon(ICON_NAMES.wrong);
+        temp = document.createElement('div');
+    if (!(content instanceof HTMLElement)) {
+        temp.innerHTML = content;
+        content = temp;
+    }
     backdrop.classList.add('dialog-backdrop');
+    header.classList.add('dialog-header');
+    content.classList.add('dialog-content');
+    closeIcon.classList.add('close-dialog-button');
     dialog.classList.add('dialog');
+
+    temp = document.createElement('span');
+    temp.appendChild(document.createTextNode(title));
+    header.appendChild(temp);
 
     closeIcon.addEventListener('click', closeDialog);
     backdrop.addEventListener('click', closeDialog);
-    closeIcon.classList.add('close-dialog-button');
 
-    dialog.appendChild(closeIcon);
-    dialog.appendChild(text);
-    medias.forEach(function (m) { dialog.appendChild(m); });
+    header.appendChild(closeIcon);
+    dialog.appendChild(header);
+    dialog.appendChild(content);
+
+    if (actions instanceof HTMLElement) {
+        actions.classList.add('dialog-actions');
+        dialog.appendChild(actions);
+    }
+
     backdrop.appendChild(dialog);
-    document.querySelector('main').appendChild(backdrop);
+
+    return backdrop;
+}
+
+function showDialog(title, content, actions) {
+    var dialog = createDialog(title, content, actions);
+    // remove existing dialog
+    if (document.querySelector('.dialog-backdrop')) {
+        document.querySelector('.dialog-backdrop').remove();
+    }
+    document.querySelector('main').appendChild(dialog);
 }
 
 function closeDialog(e) {
     // prevent nested elements from invoking the handler
-    if (this != e.target) {
-        return;
+    if (e instanceof Event) {
+        if (this != e.target) {
+            return;
+        }    
     }
     document.querySelector('.dialog-backdrop').remove();
 }
