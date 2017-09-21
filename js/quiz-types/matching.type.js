@@ -116,19 +116,10 @@ var Matching = (function () {
 
         // Make the element draggable by giving it an absolute position and modifying the x and y coordinates
         el.classList.add('fixed', 'shadow');
+        if (previousParent.querySelectorAll('li:not(.fixed)').length === 0) {
+            previousParent.parentNode.classList.add('empty');
+        }
 
-        // if (touch.pageX > main.offsetLeft && touch.pageX < main.offsetWidth + main.offsetLeft) {
-        //     el.style.left = (touch.pageX - (el.offsetWidth / 2)) + 'px';
-        // }
-        //
-        // if (touch.pageY > main.offsetTop && touch.pageY < (main.offsetHeight + main.offsetTop)) {
-        //     clearInterval(scrollTimer);
-        //     el.style.top = (touch.pageY - (el.offsetHeight / 2)) + 'px';
-        // } else if (touch.pageY < main.offsetTop) {
-        //     setInterval(scrollTimer(-10), 50);
-        // } else if (touch.pageY > (main.offsetHeight + main.offsetTop)) {
-        //     setInterval(scrollTimer(10), 50);
-        // }
         el.style.left = (touch.pageX - (el.offsetWidth / 2)) + 'px';
         el.style.top = (touch.pageY - (el.offsetHeight / 2) - document.body.scrollTop) + 'px';
 
@@ -143,10 +134,9 @@ var Matching = (function () {
             el.classList.remove('fixed', 'shadow');
             el.removeAttribute('style');
 
-            // Find element on the last drag position
             endTarget = document.elementFromPoint(
-                touch.clientX - (main.scrollTop + document.body.scrollTop),
-                touch.clientY - (main.scrollLeft + document.body.scrollLeft)
+                e.changedTouches[0].pageX - (document.body.scrollLeft + main.scrollLeft),
+                e.changedTouches[0].pageY - (document.body.scrollTop + main.scrollTop)
             );
 
             temp = true;
@@ -165,12 +155,15 @@ var Matching = (function () {
 
             if (endTarget) {
                 endTarget = endTarget.querySelector('.dropzone');
-                endTarget.appendChild(el);
+                if (endTarget !== previousParent) {
+                    endTarget.appendChild(el);
+                }
                 if (previousParent.children.length === 0) {
                     previousParent.parentNode.classList.add('empty');
                 }
                 endTarget.parentNode.classList.remove('empty');
             }
+
         });
     }
 
