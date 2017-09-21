@@ -60,18 +60,19 @@ var $ = jQuery,
     ou,
     ui;
 
-// try {
-//     CSVal.init();
-// } catch (e) {
-//     console.error('Valence not initiated', e);
-// }
-$.getJSON('data/api-dummy.json', function (data) {
-    CSVal = data;
-});
+try {
+    CSVal.init();
+} catch (e) {
+    console.error('Valence not initiated', e);
+}
+// $.getJSON('data/api-dummy.json', function (data) {
+//     CSVal = data;
+// });
 
-function setUserContext() {
+function setUserContext(jsonFile) {
     SMI.whoAmI(function (d) {
         ui = d.Identifier;
+        buildQuiz(jsonFile);
     });
 }
 
@@ -426,6 +427,12 @@ function buildQuiz(jsonFile) {
     'use strict';
     $.getJSON(jsonFile, function (data) {
         quizData = data;
+
+        // Check if user device is mobile
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            quizData.mobileDevice = true;
+        }
+
         quizData.Questions = quizData.Questions.filter(
             function (q) {
                 return !q.skip;
@@ -448,7 +455,11 @@ function buildQuiz(jsonFile) {
             repopulateContainer(SELECTORS.content, preQuiz);
             repopulateContainer(SELECTORS.actions, preQuizButtons);
         }
-        SMI.getUserGrade(ou, quizData.General.gradeId, ui, callback);
+        if (!ui) {
+            callback({});
+        } else {
+            SMI.getUserGrade(ou, quizData.General.gradeId, ui, callback);
+        }
     });
 }
 
@@ -720,5 +731,11 @@ function getIcon(text, onclick) {
 function onChange(e) {
     if (currentModel.onChange) {
         currentModel.onChange(e);
+    }
+}
+function onTouchMove(e) {
+    if (currentModel.onTouchMove) {
+        e.preventDefault();
+        currentModel.onTouchMove(e);
     }
 }

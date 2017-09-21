@@ -87,6 +87,93 @@ var Matching = (function () {
         ev.preventDefault();
     }
 
+    function onTouchMove(ev) {
+        var el = ev.target,
+            touch = ev.targetTouches[0],
+            main = document.querySelector('main'),
+            previousParent = el.parentNode,
+            endTarget,
+            temp;
+        if (el.tagName.toUpperCase() === 'IMG') {
+            el = el.parentNode;
+            previousParent = el.parentNode;
+        }
+
+        if (!el.classList.contains('questionNode')) {
+            return;
+        }
+
+
+        function scrollTimer(speed) {
+            if (main.scrollHeight > main.offsetHeight &&
+                    main.scrollTop + speed < main.offsetHeight
+                    ) {
+                main.scrollTop += speed;
+            } else if (document.body.scrollTop + speed < document.body.offsetHeight) {
+                document.body.scrollTop += speed;
+            }
+        }
+
+        // Make the element draggable by giving it an absolute position and modifying the x and y coordinates
+        el.classList.add('fixed', 'shadow');
+
+        // if (touch.pageX > main.offsetLeft && touch.pageX < main.offsetWidth + main.offsetLeft) {
+        //     el.style.left = (touch.pageX - (el.offsetWidth / 2)) + 'px';
+        // }
+        //
+        // if (touch.pageY > main.offsetTop && touch.pageY < (main.offsetHeight + main.offsetTop)) {
+        //     clearInterval(scrollTimer);
+        //     el.style.top = (touch.pageY - (el.offsetHeight / 2)) + 'px';
+        // } else if (touch.pageY < main.offsetTop) {
+        //     setInterval(scrollTimer(-10), 50);
+        // } else if (touch.pageY > (main.offsetHeight + main.offsetTop)) {
+        //     setInterval(scrollTimer(10), 50);
+        // }
+        el.style.left = (touch.pageX - (el.offsetWidth / 2)) + 'px';
+        el.style.top = (touch.pageY - (el.offsetHeight / 2) - document.body.scrollTop) + 'px';
+
+        if (touch.pageY < main.offsetTop) {
+            setInterval(scrollTimer(-10), 50);
+        } else if (touch.pageY > (main.offsetHeight + main.offsetTop)) {
+            setInterval(scrollTimer(10), 50);
+        }
+
+        el.addEventListener('touchend', function (e) {
+
+            el.classList.remove('fixed', 'shadow');
+            el.removeAttribute('style');
+
+            // Find element on the last drag position
+            endTarget = document.elementFromPoint(
+                touch.clientX - (main.scrollTop + document.body.scrollTop),
+                touch.clientY - (main.scrollLeft + document.body.scrollLeft)
+            );
+
+            temp = true;
+            while (temp && endTarget && endTarget.classList) {
+                if (endTarget.classList.contains('answer-nodes') ||
+                        endTarget.classList.contains('question-nodes-container')
+                        ) {
+                    temp = false;
+                } else if (endTarget.parentNode !== main) {
+                    endTarget = endTarget.parentNode;
+                } else {
+                    endTarget = null;
+                    temp = false;
+                }
+            }
+
+            if (endTarget) {
+                endTarget = endTarget.querySelector('.dropzone');
+                endTarget.appendChild(el);
+                if (previousParent.children.length === 0) {
+                    previousParent.parentNode.classList.add('empty');
+                }
+                endTarget.parentNode.classList.remove('empty');
+            }
+        });
+    }
+
     function getInstructions(show) {
         if (show === undefined) {
             show = true;
@@ -153,6 +240,7 @@ var Matching = (function () {
             li.setAttribute('id', idx);
             li.setAttribute('draggable', 'true');
             li.setAttribute('ondragstart', 'Matching.onDragStart(event)');
+            li.setAttribute('ontouchmove', 'onTouchMove(event)');
             li.setAttribute('tabIndex', tabIndex);
             tabIndex += 1;
             li.addEventListener('mouseleave', blur);
@@ -391,6 +479,7 @@ var Matching = (function () {
         onDragStart: onDragStart,
         onDrop: onDrop,
         onDragOver: onDragOver,
+        onTouchMove: onTouchMove,
         checkAnswer: checkAnswer,
         resetAll: resetAll
     };
