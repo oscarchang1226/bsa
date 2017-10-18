@@ -93,6 +93,7 @@ var Matching = (function () {
             main = document.querySelector('main'),
             previousParent = el.parentNode,
             endTarget,
+            parentBody = parent,
             temp;
         if (el.tagName.toUpperCase() === 'IMG') {
             el = el.parentNode;
@@ -105,12 +106,8 @@ var Matching = (function () {
 
 
         function scrollTimer(speed) {
-            if (main.scrollHeight > main.offsetHeight &&
-                    main.scrollTop + speed < main.offsetHeight
-                    ) {
-                main.scrollTop += speed;
-            } else if (document.body.scrollTop + speed < document.body.offsetHeight) {
-                document.body.scrollTop += speed;
+            if (parent && parent.document.body.scrollTop + speed < parent.document.body.offsetHeight) {
+                parent.document.body.scrollTop += speed;
             }
         }
 
@@ -121,7 +118,7 @@ var Matching = (function () {
         }
 
         el.style.left = (touch.pageX - (el.offsetWidth / 2)) + 'px';
-        el.style.top = (touch.pageY - (el.offsetHeight / 2) - document.body.scrollTop) + 'px';
+        el.style.top = (touch.pageY - (el.offsetHeight / 2)) + 'px';
 
         if (touch.pageY < main.offsetTop) {
             setInterval(scrollTimer(-10), 50);
@@ -135,8 +132,8 @@ var Matching = (function () {
             el.removeAttribute('style');
 
             endTarget = document.elementFromPoint(
-                e.changedTouches[0].pageX - (document.body.scrollLeft + main.scrollLeft),
-                e.changedTouches[0].pageY - (document.body.scrollTop + main.scrollTop)
+                e.changedTouches[0].pageX,
+                e.changedTouches[0].pageY
             );
 
             temp = true;

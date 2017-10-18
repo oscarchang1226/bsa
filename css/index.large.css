@@ -1,0 +1,9 @@
+.content .question-nodes-container ul.dropzone li.media:not(.fixed) {
+    width: calc((100% / 4) - 8px);
+}
+.content li.fixed {
+    width: 100px;
+}
+.content .answer-nodes-container ul.dropzone li.media:not(.fixed) {
+    width: calc((100% / 4) - 8px);
+}

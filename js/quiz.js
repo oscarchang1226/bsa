@@ -99,7 +99,9 @@ function getQuestionModel(questionType) {
 }
 
 function getQuiz(idx) {
-    document.body.scrollTop = 0;
+    if (parent) {
+        parent.document.body.scrollTop = 0;
+    }
     currentQuestion = quizData.Questions[idx];
     currentModel = getQuestionModel(currentQuestion.questionType);
     if (savedActivity[idx]) {
@@ -248,11 +250,8 @@ function finish() {
         maxScore = savedMaxScore.reduce(function (acc, score) {
             return acc + score;
         }, 0),
-        submitCallBack = function (e) {
+        submitCallBack = function () {
             'use strict';
-            if (this !== e.target) {
-                return;
-            }
             var incomingGradeValue = {
                 GradeObjectType: 1,
                 PointsNumerator: score,
@@ -267,16 +266,32 @@ function finish() {
             };
             if (parent && parent.document) {
                 var nextButton = parent.document.querySelector('a.d2l-iterator-button-next'),
+                    cb;
                     cb = function (res, err) {
                         if (res.status === 200) {
-                            closeDialog();
-                            return parent.document.querySelector('a.d2l-iterator-button-next').click();
+                            if (score === maxScore) {
+                                return SMI.issueAward(
+                                    function () {
+                                        parent.document.querySelector('a.d2l-iterator-button-next').click();
+                                    },
+                                    SMI.generateIssuedAwardCreate(
+                                        'Scored 100% on ' + quizData.General.QuizName + '.',
+                                        'Issued by Smith Custom IAT'
+                                    )
+                                );
+                            } else {
+                                parent.document.querySelector('a.d2l-iterator-button-next').click();
+                            }
                         } else {
                             console.error(res.statusText, err);
                         }
                     };
                 if (nextButton) {
-                    SMI.putUserGrade(ou, quizData.General.gradeId, ui, incomingGradeValue, cb);
+                    if (!quizData.General.gradeId) {
+                        cb({status: 200});
+                    } else {
+                        SMI.putUserGrade(cb, incomingGradeValue);
+                    }
                 } else {
                     // TODO: Maybe use a dialog for this
                     console.warn('Cannot find next button');
@@ -303,7 +318,8 @@ function finish() {
     temp.appendChild(document.createTextNode('No'));
     temp.addEventListener('click', closeDialog);
     actions.appendChild(temp);
-    showDialog('Quiz Result', content, actions);
+    // showDialog('Quiz Result', content, actions);
+    submitCallBack();
 }
 
 /**
@@ -329,9 +345,6 @@ function getQuizButtons(data) {
     if (savedActivity[currentIndex] || savedScores[currentIndex] !== null) {
         if (currentIndex === data.Questions.length-1) {
             if (havePostQuiz(data)) {
-                if (data.General.allowReset || currentQuestion.reset) {
-                    buttons.push(getButtonElement(BUTTONS.resetAll));
-                }
                 buttons.push(getButtonElement(BUTTONS.endQuiz));
             } else {
                 temp = BUTTONS.startQuiz;
@@ -340,9 +353,6 @@ function getQuizButtons(data) {
                 buttons.push(getButtonElement(BUTTONS.finish));
             }
         } else {
-            if (data.General.allowReset || currentQuestion.reset) {
-                buttons.push(getButtonElement(BUTTONS.resetAll));
-            }
             buttons.push(getButtonElement(BUTTONS.cont));
         }
     } else {
@@ -438,27 +448,45 @@ function buildQuiz(jsonFile) {
                 return !q.skip;
             }
         );
-        SMI.getGrade(ou, quizData.General.gradeId, function (res) {
-            if (res.status === 200) {
-                gradeObject = res.responseJSON;
-            }
-        });
+
         var quizHeader = getQuizHeader(quizData);
         setQuizHeader(quizHeader);
-        var callback = function (d) {
-            'use strict';
-            if (d.status === 200) {
-                gradedScoreObject = d.responseJSON;
-            }
+
+        // Init SMI
+        SMI.init({
+            ou: ou,
+            ui: ui,
+            gi: quizData.General.gradeId,
+            ai: quizData.General.awardId
+        });
+
+        if (!quizData.General.gradeId) {
             var preQuiz = getPreQuiz(quizData);
             var preQuizButtons = getPreQuizButtons();
             repopulateContainer(SELECTORS.content, preQuiz);
             repopulateContainer(SELECTORS.actions, preQuizButtons);
-        }
-        if (!ui) {
-            callback({});
         } else {
-            SMI.getUserGrade(ou, quizData.General.gradeId, ui, callback);
+            SMI.getGrade(function (res) {
+                if (res.status === 200) {
+                    gradeObject = res.responseJSON;
+                }
+            });
+
+            var callback = function (d) {
+                'use strict';
+                if (d.status === 200) {
+                    gradedScoreObject = d.responseJSON;
+                }
+                var preQuiz = getPreQuiz(quizData);
+                var preQuizButtons = getPreQuizButtons();
+                repopulateContainer(SELECTORS.content, preQuiz);
+                repopulateContainer(SELECTORS.actions, preQuizButtons);
+            }
+            if (!ui) {
+                callback({});
+            } else {
+                SMI.getUserGrade(callback);
+            }
         }
     });
 }

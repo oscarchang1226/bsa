@@ -14,14 +14,12 @@
     position: fixed;
 }
 body {
-    height: 580px;
     max-width: 768px;
     margin: 0 auto;
     overflow: hidden;
     overflow-y: auto;
 }
 main {
-    max-height: 508px;
     overflow-y: auto;
 }
 ul {
@@ -225,27 +223,24 @@ ul.dropzone {
     display: flex;
     flex-wrap: wrap;
 }
-ul.dropzone li {
+ul.dropzone li:not(.fixed) {
     width: 100%;
     outline: none;
 }
-ul.dropzone li.fixed {
-    width: initial;
+li.fixed {
+    width: 30%;
     background-color: white;
     padding: 8px;
 }
-ul.dropzone li.fixed.media {
-    max-width: 10%;
-}
-.question-nodes-container ul.dropzone li.media {
-    width: calc((100% / 2) - 8px);
+.question-nodes-container ul.dropzone li.media:not(.fixed) {
+    width: calc(100% - 8px);
 }
 .question-nodes-container ul.dropzone li.media > *,
 .answer-nodes-container ul.dropzone li.media  > * {
     width: 100%;
 }
-.answer-nodes-container ul.dropzone li.media {
-    width: calc(100% / 3);
+.answer-nodes-container ul.dropzone li.media:not(.fixed) {
+    width: calc(100% / 2);
     margin: auto;
 }
 ul.dropzone li:hover:not(.fixed),
@@ -340,11 +335,6 @@ li.feedback-item.correct i.material-icons {
 }
 li.feedback-item.wrong i.material-icons {
     color: red;
-}
-@media only screen and (min-width: 768px) {
-    .question-nodes-container ul.dropzone li.media {
-        width: calc((100% / 3) - 8px);
-    }
 }
 /** End Matching Type Styles **/
 

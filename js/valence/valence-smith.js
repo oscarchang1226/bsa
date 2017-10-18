@@ -22,176 +22,108 @@
 
 /*jslint browser: true */
 /*global D2L, jQuery, $, console, SMI */
-
-var LEVERSION = '1.25',
-    BASVERSION = '1.10',
-    LPVERSION = '1.18',
-    SMI = SMI || {};
-SMI.getAppContext = function () {
-    'use strict';
-    var a = 'Bocs5Yg-9rEpxK_0L4dGUw',
-        b = 'zEoByoY5l3sWLvBkwXAmcA';
-    return new D2L.ApplicationContext(a, b);
-};
-SMI.getUserContext = function () {
-    'use strict';
-    var c = 'https://smithweb.brightspace.com',
-        d = '443',
-        e = 'e9RfZgHDTu3vm_gqMPsmfC',
-        f = 'DphdEgK0jpS_8P-ZXaZQWR';
-    return SMI.getAppContext().createUserContextWithValues(c, d, e, f);
-};
-SMI.endpoints = {
-    user_grade: function (ou, gi, ui) {
-        'use strict';
-        return '/d2l/api/le/' + LEVERSION + '/' + ou + '/grades/' + gi + '/values/' + ui;
-    },
-    grade: function (ou, gi) {
-        'use strict';
-        return '/d2l/api/le/' + LEVERSION + '/' + ou + '/grades/' + gi;
-    },
-    issue_award: function (ou) {
-        'use strict';
-        return '/d2l/api/bas/' + BASVERSION + '/orgunits/' + ou + '/issued/';
-    },
-    who_am_i: function () {
-        'use strict';
-        return '/d2l/api/lp/' + LPVERSION + '/users/whoami';
-    }
-};
-SMI.whoAmI = function (cb) {
-    'use strict';
-    return $.get(SMI.endpoints.who_am_i(), cb);
-};
-SMI.preCall = function (cb) {
-    'use strict';
-    // $.get('/d2l/lp/auth/xsrf-tokens', cb);
-    cb({'hitCodePrefix': '-1315665569', 'referrerToken': 'Znpl0OTAb63pYv88SK92DaKkwZsArud9'});
-};
-SMI.issueAward = function (ou, data, cb) {
-    'use strict';
-    if (D2L) {
-        var url,
-            callback;
-        if (typeof cb !== 'function') {
-            cb = function (res, err) {
-                if (res.status !== 200) {
-                    console.error(res.statusText, err);
-                }
+(function ($) {
+    "use strict";
+    window.SMI = {
+        LEVERSION: '1.25',
+        BAVERSION: '1.0',
+        LPVERSION: '1.18',
+        currentContext: {},
+        endpoints: {},
+        init: function (currentContext) {
+            this.currentContext = currentContext;
+            this.endpoints = {
+                user_grade: '/d2l/api/le/' + this.LEVERSION + '/' + currentContext.ou + '/grades/' + currentContext.gi + '/values/' + currentContext.ui,
+                grade: '/d2l/api/le/' + this.LEVERSION + '/' + currentContext.ou + '/grades/' + currentContext.gi,
+                grade_stats: '/d2l/api/le/' + this.LEVERSION + '/' + currentContext.ou + '/grades/' + currentContext.gi + '/statistics',
+                associations: '/d2l/api/bas/' + this.BAVERSION + '/orgunits/' + currentContext.ou + '/associations/',
+                issue_award: '/d2l/api/bas/' + this.BAVERSION + '/orgunits/' + currentContext.ou + '/issued/',
+                who_am_i: '/d2l/api/lp/' + this.LPVERSION + '/users/whoami'
             };
-        }
-        url = SMI.endpoints.issue_award(ou);
-        url = SMI.getUserContext().createUrlForAuthentication(url, 'POST');
-        callback = function (d) {
-            $.ajax(
-                {
-                    type: 'POST',
-                    url: url,
-                    complete: cb,
-                    contentType: "application/json",
-                    dataType: 'json',
-                    headers: {
-                        Accept: 'application/json',
-                        'Content-Type': 'application/json',
-                        'X-Csrf-Token': d.referrerToken
-                    },
-                    data: JSON.stringify(data)
-                }
-            );
-        };
-        return SMI.preCall(callback);
-    }
-    return null;
-};
-SMI.getGrade = function (ou, gi, cb) {
-    'use strict';
-    if (D2L) {
-        var url,
-            callback;
-        if (typeof cb !== 'function') {
-            cb = function (res, err) {
-                if (res.status !== 200) {
-                    console.error(res.statusText, err);
-                }
-            };
-        }
-        url = SMI.endpoints.grade(ou, gi);
-        url = SMI.getUserContext().createUrlForAuthentication(url, 'GET');
-        callback = function (d) {
-            $.ajax(
-                {
-                    type: 'GET',
-                    url: url,
+        },
+        getAppContext: function () {
+            var a = 'Bocs5Yg-9rEpxK_0L4dGUw',
+                b = 'zEoByoY5l3sWLvBkwXAmcA';
+            return new D2L.ApplicationContext(a, b);
+        },
+        getUserContext: function () {
+            var c = 'https://smithweb.brightspace.com',
+                d = '443',
+                e = 'e9RfZgHDTu3vm_gqMPsmfC',
+                f = 'DphdEgK0jpS_8P-ZXaZQWR';
+            return this.getAppContext().createUserContextWithValues(c, d, e, f);
+        },
+        preCall: function (cb) {
+            if (this.currentContext.prod) {
+                $.get('/d2l/lp/auth/xsrf-tokens', cb);
+            } else {
+                cb({'hitCodePrefix': '-1315665569', 'referrerToken': 'Znpl0OTAb63pYv88SK92DaKkwZsArud9'});
+            }
+        },
+        callAjax: function (m, u, cb, data) {
+            if (typeof cb !== 'function') {
+                cb = function (res, err) {
+                    if (res.status !== 200) {
+                        console.error(res.statusText, err);
+                    }
+                };
+            }
+            u = this.getUserContext().createUrlForAuthentication(u, m);
+            var preCallback = function (d) {
+                var settings = {
+                    type: m,
+                    url: u,
                     complete: cb,
                     headers: {
                         'X-Csrf-Token': d.referrerToken
                     }
+                };
+                if ('POST' === m.toUpperCase() || 'PUT' === m.toUpperCase()) {
+                    settings.dataType = 'json';
+                    settings.contentType = "application/json";
+                    settings.data = JSON.stringify(data);
+                    settings.headers.Accept = 'application/json';
+                    settings.headers['Content-Type'] = 'application/json';
                 }
-            );
-        };
-        return SMI.preCall(callback);
-    }
-}
-SMI.getUserGrade = function (ou, gi, ui, cb) {
-    'use strict';
-    if (D2L) {
-        var url,
-            callback;
-        if (typeof cb !== 'function') {
-            cb = function (res, err) {
-                if (res.status !== 200) {
-                    console.error(res.statusText, err);
-                }
+                $.ajax(settings);
             };
-        }
-        url = SMI.endpoints.user_grade(ou, gi, ui);
-        url = SMI.getUserContext().createUrlForAuthentication(url, 'GET');
-        callback = function (d) {
-            $.ajax(
-                {
-                    type: 'GET',
-                    url: url,
-                    complete: cb,
-                    headers: {
-                        'X-Csrf-Token': d.referrerToken
-                    }
-                }
-            );
-        };
-        return SMI.preCall(callback);
-    }
-};
-SMI.putUserGrade = function (ou, gi, ui, data, cb) {
-    'use strict';
-    if (D2L) {
-        var url,
-            callback;
-        if (typeof cb !== 'function') {
-            cb = function (res, err) {
-                if (res.status !== 200) {
-                    console.error(res.statusText, err);
-                }
+            return this.preCall(preCallback);
+        },
+        getAssociations: function (cb) {
+            var url = this.endpoints.associations;
+            return this.callAjax('GET', url, cb);
+        },
+        issueAward: function (cb, data) {
+            var url = this.endpoints.issue_award;
+            return this.callAjax('POST', url, cb, data);
+        },
+        getGrade: function (cb) {
+            var url = this.endpoints.grade;
+            return this.callAjax('GET', url, cb);
+        },
+        getGradeStats: function (cb) {
+            var url = this.endpoints.grade_stats;
+            return this.callAjax('GET', url, cb);
+        },
+        getUserGrade: function (cb) {
+            var url = this.endpoints.user_grade;
+            return this.callAjax('GET', url, cb);
+        },
+        putUserGrade: function (cb, data) {
+            var url = this.endpoints.user_grade;
+            return this.callAjax('PUT', url, cb, data);
+        },
+        generateIssuedAwardCreate: function (c, e) {
+            return {
+                AwardId: this.currentContext.ai,
+                IssuedToUserId: this.currentContext.ui,
+                Criteria: c,
+                Evidence: e
             };
+        },
+        whoAmI: function (cb) {
+            var url = this.endpoints.who_am_i;
+            return this.callAjax('GET', url, cb);
         }
-        url = SMI.endpoints.user_grade(ou, gi, ui);
-        url = SMI.getUserContext().createUrlForAuthentication(url, 'PUT');
-        callback = function (d) {
-            $.ajax(
-                {
-                    type: 'PUT',
-                    url: url,
-                    complete: cb,
-                    dataType: 'json',
-                    headers: {
-                        Accept: 'application/json',
-                        'Content-Type': 'application/json',
-                        'X-Csrf-Token': d.referrerToken
-                    },
-                    data: JSON.stringify(data)
-                }
-            );
-        };
-        return SMI.preCall(callback);
-    }
-    return null;
-};
+    };
+}(jQuery));
