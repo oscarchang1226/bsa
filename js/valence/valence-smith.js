@@ -29,7 +29,9 @@
         BAVERSION: '1.0',
         LPVERSION: '1.18',
         currentContext: {},
-        endpoints: {},
+        endpoints: {
+            who_am_i: '/d2l/api/lp/' + this.LPVERSION + '/users/whoami'
+        },
         init: function (currentContext) {
             this.currentContext = currentContext;
             this.endpoints = {
