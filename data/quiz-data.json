@@ -17,8 +17,8 @@
     "subtractWrong": true,
     "preQuizText":"<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent rhoncus nibh porta dui consequat, quis tempor dolor mollis. Donec sed justo neque. Ut sem nulla, commodo at justo non, dictum facilisis lectus. Vestibulum sit amet pretium neque. Sed erat nulla, molestie quis elit in, auctor posuere erat. Nam sit amet eros auctor, rhoncus nibh in, facilisis ligula. Nam lectus orci, vestibulum ut gravida nec, tempus at neque.</p><p> Curabitur gravida dui quis laoreet luctus. In commodo pellentesque lectus, et pretium augue consectetur at. Sed lacinia aliquam nisi, nec varius mi dictum sed. Fusce imperdiet faucibus dui non mollis. Morbi facilisis ante in risus rutrum molestie. Nunc varius nisi maximus mollis porttitor. Cras ligula leo, malesuada et facilisis ut, eleifend condimentum urna. Ut suscipit justo a lectus faucibus porttitor. Ut euismod mi sed est volutpat, non bibendum nisl semper.</p>",
     "preQuizMedia":"none",
-    "skipPostQuiz": true,
-    "postQuizText":"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas volutpat metus mauris, sed gravida sem posuere in. Etiam sed lectus augue. Ut ornare nulla a tortor auctor, sed feugiat purus cursus. Proin aliquet diam justo, vel porta magna commodo eget. Vestibulum sit amet elit nec tellus ornare mattis nec vitae.",
+    "skipPostQuiz": false,
+    "postQuizText":"orem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas volutpat metus mauris, sed gravida sem posuere in. Etiam sed lectus augue. Ut ornare nulla a tortor auctor, sed feugiat purus cursus. Proin aliquet diam justo, vel porta magna commodo eget. Vestibulum sit amet elit nec tellus ornare mattis nec vitae.",
     "postQuizMedia":[
       {
         "type": "YouTubeVideo",

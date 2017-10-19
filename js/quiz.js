@@ -29,7 +29,7 @@ var $ = jQuery,
             className: 'start-quiz'
         },
         finish: {
-            label: 'Submit Grade',
+            label: 'Next Topic',
             className: 'finish'
         },
         resetAll: {
@@ -56,24 +56,38 @@ var $ = jQuery,
             label: 'Next',
             className: 'end-quiz'
         }
-    },
-    ou,
-    ui;
+    };
 
 try {
     CSVal.init();
 } catch (e) {
-    console.error('Valence not initiated', e);
+    console.error('CSVal not initiated', e);
 }
-// $.getJSON('data/api-dummy.json', function (data) {
-//     CSVal = data;
-// });
 
-function setUserContext(jsonFile) {
-    SMI.whoAmI(function (d) {
-        ui = d.Identifier;
-        buildQuiz(jsonFile);
-    });
+function setContext(jsonFile, context) {
+    if (!context) {
+        context = {};
+    }
+    if (!context.ou) {
+        try {
+            context.ou = CSVal.context.ouID;
+        } catch (e) {
+            context.ou = null;
+        }
+    }
+    if (!context.ui) {
+        try {
+            $.get(SMI.getUrls('who_am_i'), function (d) {
+                context.ui = d.Identifier;
+                buildQuiz(jsonFile, context);
+            });
+        } catch (e) {
+            context.ui = null;
+            buildQuiz(jsonFile, context);
+        }
+    } else {
+        buildQuiz(jsonFile, context);
+    }
 }
 
 /**
@@ -170,19 +184,29 @@ function getPreQuiz(data) {
 function getPostQuiz(data, containerParent) {
     var text,
         medias,
-        elList = [];
-    if (havePostQuizText(data.General)) {
-        text = getText(data.General.postQuizText, 'quiz-post-text');
-        elList.push(text);
-    }
-    if (havePostQuizMedia(data.General)) {
-        medias = document.createElement('div');
-        medias.classList.add('quiz-post-media');
-        data.General.postQuizMedia.forEach(function (media) {
-            medias.appendChild(getMedia(media, containerParent));
-        });
-        elList.push(medias);
-    }
+        elList = [],
+        score = savedScores.reduce(function (acc, score) {
+                return acc + score;
+        }, 0),
+        maxScore = savedMaxScore.reduce(function (acc, score) {
+                return acc + score;
+        }, 0);
+    // if (havePostQuizText(data.General)) {
+    //     text = getText(data.General.postQuizText, 'quiz-post-text');
+    //     elList.push(text);
+    // }
+    // if (havePostQuizMedia(data.General)) {
+    //     medias = document.createElement('div');
+    //     medias.classList.add('quiz-post-media');
+    //     data.General.postQuizMedia.forEach(function (media) {
+    //         medias.appendChild(getMedia(media, containerParent));
+    //     });
+    //     elList.push(medias);
+    // }
+    text = document.createElement('p');
+    text.classList.add('quiz-post-text', 'graded-text');
+    text.innerHTML = 'You scored <b>'+ (score / maxScore * 100).toFixed(2) +'%</b> on this assessment.';
+    elList.push(text);
     return elList;
 }
 
@@ -249,77 +273,21 @@ function finish() {
         }, 0),
         maxScore = savedMaxScore.reduce(function (acc, score) {
             return acc + score;
-        }, 0),
-        submitCallBack = function () {
-            'use strict';
-            var incomingGradeValue = {
-                GradeObjectType: 1,
-                PointsNumerator: score,
-                Comments: {
-                    Content: '',
-                    Type: 'Text'
-                },
-                PrivateComments: {
-                    Content: '',
-                    Type: 'Text'
-                }
-            };
-            if (parent && parent.document) {
-                var nextButton = parent.document.querySelector('a.d2l-iterator-button-next'),
-                    cb;
-                    cb = function (res, err) {
-                        if (res.status === 200) {
-                            if (score === maxScore) {
-                                return SMI.issueAward(
-                                    function () {
-                                        parent.document.querySelector('a.d2l-iterator-button-next').click();
-                                    },
-                                    SMI.generateIssuedAwardCreate(
-                                        'Scored 100% on ' + quizData.General.QuizName + '.',
-                                        'Issued by Smith Custom IAT'
-                                    )
-                                );
-                            } else {
-                                parent.document.querySelector('a.d2l-iterator-button-next').click();
-                            }
-                        } else {
-                            console.error(res.statusText, err);
-                        }
-                    };
-                if (nextButton) {
-                    if (!quizData.General.gradeId) {
-                        cb({status: 200});
-                    } else {
-                        SMI.putUserGrade(cb, incomingGradeValue);
-                    }
-                } else {
-                    // TODO: Maybe use a dialog for this
-                    console.warn('Cannot find next button');
-                    console.log(incomingGradeValue);
-                }
-            } else {
-                // TODO: Maybe use a dialog for this
-                console.warn('Cannot find next button');
-                console.log(incomingGradeValue);
-            }
-        },
-        content = document.createElement('div'),
-        actions = document.createElement('div'),
-        temp;
-    content.appendChild(getText('You scored <b>' + score + ' out of ' + maxScore + '</b>.', 'graded-text'));
-    content.appendChild(getText('Submit your scores?', ''));
-    temp = document.createElement('button');
-    temp.classList.add('y');
-    temp.appendChild(document.createTextNode('Yes'));
-    temp.addEventListener('click', submitCallBack);
-    actions.appendChild(temp);
-    temp = document.createElement('button');
-    temp.classList.add('n');
-    temp.appendChild(document.createTextNode('No'));
-    temp.addEventListener('click', closeDialog);
-    actions.appendChild(temp);
-    // showDialog('Quiz Result', content, actions);
-    submitCallBack();
+        }, 0);
+    if (parent && parent.document) {
+        var nextButton = parent.document.querySelector('a.d2l-iterator-button-next');
+        if (nextButton) {
+            parent.document.querySelector('a.d2l-iterator-button-next').click();
+        } else {
+            // TODO: Maybe use a dialog for this
+            console.warn('Cannot find next button');
+            console.log(incomingGradeValue);
+        }
+    } else {
+        // TODO: Maybe use a dialog for this
+        console.warn('Cannot find next button');
+        console.log(incomingGradeValue);
+    }
 }
 
 /**
@@ -433,7 +401,7 @@ function initialSaved() {
     );
 }
 
-function buildQuiz(jsonFile) {
+function buildQuiz(jsonFile, context) {
     'use strict';
     $.getJSON(jsonFile, function (data) {
         quizData = data;
@@ -452,13 +420,10 @@ function buildQuiz(jsonFile) {
         var quizHeader = getQuizHeader(quizData);
         setQuizHeader(quizHeader);
 
+        context.gi = quizData.General.gradeId;
+        context.ai = quizData.General.awardId;
         // Init SMI
-        SMI.init({
-            ou: ou,
-            ui: ui,
-            gi: quizData.General.gradeId,
-            ai: quizData.General.awardId
-        });
+        SMI.init(context);
 
         if (!quizData.General.gradeId) {
             var preQuiz = getPreQuiz(quizData);
@@ -482,7 +447,7 @@ function buildQuiz(jsonFile) {
                 repopulateContainer(SELECTORS.content, preQuiz);
                 repopulateContainer(SELECTORS.actions, preQuizButtons);
             }
-            if (!ui) {
+            if (!context.ui) {
                 callback({});
             } else {
                 SMI.getUserGrade(callback);
@@ -501,7 +466,10 @@ function getAnswer(model, data, question) {
 
 function checkAnswer() {
     // TODO: Keep previous progress. if checkanswer remove all next
-    var result;
+    var result,
+        score,
+        maxScore,
+        temp;
     if (currentModel.checkAnswer) {
         // TODO: Implement model check answer with current question data
         result = currentModel.checkAnswer(currentQuestion);
@@ -515,6 +483,25 @@ function checkAnswer() {
     } else {
         // TODO: proceed with default checking
         console.error('No default checking.');
+    }
+    if (currentIndex === quizData.Questions.length - 1 && quizData.General.gradeId) {
+        score = savedScores.reduce(function (acc, score) {
+                return acc + score;
+        }, 0);
+        maxScore = savedMaxScore.reduce(function (acc, score) {
+            return acc + score;
+        }, 0);
+        temp = SMI.generateIncomingGradeValue(score, 'Graded by SMI IAT');
+        SMI.putUserGrade(null, temp);
+        if (score === maxScore && quizData.General.awardId) {
+            SMI.issueAward(
+                null,
+                SMI.generateIssuedAwardCreate(
+                    'Scored 100% on ' + quizData.General.QuizName + '.',
+                    'Issued by Smith Custom IAT'
+                )
+            );
+        }
     }
 }
 

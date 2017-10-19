@@ -29,19 +29,19 @@
         BAVERSION: '1.0',
         LPVERSION: '1.18',
         currentContext: {},
-        endpoints: {
-            who_am_i: '/d2l/api/lp/' + this.LPVERSION + '/users/whoami'
-        },
         init: function (currentContext) {
             this.currentContext = currentContext;
-            this.endpoints = {
-                user_grade: '/d2l/api/le/' + this.LEVERSION + '/' + currentContext.ou + '/grades/' + currentContext.gi + '/values/' + currentContext.ui,
-                grade: '/d2l/api/le/' + this.LEVERSION + '/' + currentContext.ou + '/grades/' + currentContext.gi,
-                grade_stats: '/d2l/api/le/' + this.LEVERSION + '/' + currentContext.ou + '/grades/' + currentContext.gi + '/statistics',
-                associations: '/d2l/api/bas/' + this.BAVERSION + '/orgunits/' + currentContext.ou + '/associations/',
-                issue_award: '/d2l/api/bas/' + this.BAVERSION + '/orgunits/' + currentContext.ou + '/issued/',
+        },
+        getUrls: function (name) {
+            var urls = {
+                user_grade: '/d2l/api/le/' + this.LEVERSION + '/' + this.currentContext.ou + '/grades/' + this.currentContext.gi + '/values/' + this.currentContext.ui,
+                grade: '/d2l/api/le/' + this.LEVERSION + '/' + this.currentContext.ou + '/grades/' + this.currentContext.gi,
+                grade_stats: '/d2l/api/le/' + this.LEVERSION + '/' + this.currentContext.ou + '/grades/' + this.currentContext.gi + '/statistics',
+                associations: '/d2l/api/bas/' + this.BAVERSION + '/orgunits/' + this.currentContext.ou + '/associations/',
+                issue_award: '/d2l/api/bas/' + this.BAVERSION + '/orgunits/' + this.currentContext.ou + '/issued/',
                 who_am_i: '/d2l/api/lp/' + this.LPVERSION + '/users/whoami'
             };
+            return urls[name];
         },
         getAppContext: function () {
             var a = 'Bocs5Yg-9rEpxK_0L4dGUw',
@@ -92,27 +92,27 @@
             return this.preCall(preCallback);
         },
         getAssociations: function (cb) {
-            var url = this.endpoints.associations;
+            var url = this.getUrls('associations');
             return this.callAjax('GET', url, cb);
         },
         issueAward: function (cb, data) {
-            var url = this.endpoints.issue_award;
+            var url = this.getUrls('issue_award');
             return this.callAjax('POST', url, cb, data);
         },
         getGrade: function (cb) {
-            var url = this.endpoints.grade;
+            var url = this.getUrls('grade');
             return this.callAjax('GET', url, cb);
         },
         getGradeStats: function (cb) {
-            var url = this.endpoints.grade_stats;
+            var url = this.getUrls('grade_stats');
             return this.callAjax('GET', url, cb);
         },
         getUserGrade: function (cb) {
-            var url = this.endpoints.user_grade;
+            var url = this.getUrls('user_grade');
             return this.callAjax('GET', url, cb);
         },
         putUserGrade: function (cb, data) {
-            var url = this.endpoints.user_grade;
+            var url = this.getUrls('user_grade');
             return this.callAjax('PUT', url, cb, data);
         },
         generateIssuedAwardCreate: function (c, e) {
@@ -123,8 +123,22 @@
                 Evidence: e
             };
         },
+        generateIncomingGradeValue: function (score, c, pc) {
+            return {
+                GradeObjectType: 1,
+                PointsNumerator: score,
+                Comments: {
+                    Content: c || '',
+                    Type: 'Text'
+                },
+                PrivateComments: {
+                    Content: pc || '',
+                    Type: 'Text'
+                }
+            };
+        },
         whoAmI: function (cb) {
-            var url = this.endpoints.who_am_i;
+            var url = this.getUrls('who_am_i');
             return this.callAjax('GET', url, cb);
         }
     };
