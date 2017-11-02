@@ -120,7 +120,8 @@ var FillInTheBlank = (function () {
         var maxScore = data.maxScoreValue,
             score = 0,
             correctAnswer = data.questionText,
-            selected = data.questionText;
+            selected = data.questionText,
+            isCorrect = true;
         data.answers.forEach(function (a) {
             correctAnswer = correctAnswer.replace(
                 getRegex(),
@@ -143,12 +144,20 @@ var FillInTheBlank = (function () {
                 );
                 if (alt) {
                     score += alt.scoreValue;
+                } else {
+                    if (isCorrect) {
+                        isCorrect = false;
+                    }
+                }
+            } else {
+                if (isCorrect) {
+                    isCorrect = false;
                 }
             }
         });
         return {
             maxScore: maxScore,
-            score: score,
+            score: isCorrect? maxScore : 0,
             correctAnswer: correctAnswer,
             selected: selected
         };

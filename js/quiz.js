@@ -12,6 +12,7 @@ var $ = jQuery,
     currentModel = null,
     currentQuestion = null,
     quizData = {},
+    timer = {},
     SELECTORS = {
         header: '.header',
         content: '.content',
@@ -90,22 +91,118 @@ function setContext(jsonFile, context) {
     }
 }
 
+function createQuizdata(quizName, gradeId, awardId) {
+    return {
+        General: {
+            "QuizName": quizName || "My Quiz Activity",
+            "HeadingLevel": 1,
+            "gradeId": gradeId,
+            "awardId": awardId,
+            "instructions": "none",
+            "feedBackType":"continuous",
+            "forceCorrect":false,
+            "repeatOnComplete":true,
+            "allowNone":false,
+            "allowPrevious":true,
+            "allowReset": true,
+            "showHints": true,
+            "allowPartial": true,
+            "randomize": true,
+            "subtractWrong": true,
+            "postQuizText": 'You have completed ' + (quizName || "My Quiz Activity")
+        }
+    }
+}
+
+function buildSmithUrl(endpoint) {
+    return 'http://localhost:4040/api' + endpoint;
+}
+
+function callSmithApi(settings) {
+    if (!settings || !settings.url) {
+        return;
+    }
+    $.ajax({
+        type: 'POST',
+        url: buildSmithUrl('/token'),
+        headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json'
+        },
+        complete: function(res) {
+            if (res.responseJSON.access_token && res.responseJSON.token_type) {
+                settings.headers.Authorization = res.responseJSON.token_type + ' ' + res.responseJSON.access_token;
+                $.ajax(settings);
+            }
+        }
+    });
+}
+
+function getAssessment(assessmentId, context) {
+    var url,
+        temp;
+    if (isNaN(assessmentId)) {
+        // assume its a url
+        url = assessmentId;
+    } else {
+        // assume its a assessment id
+        url = buildSmithUrl('/assessments/' + assessmentId + '/attempt');
+    }
+    callSmithApi({
+        type: 'GET',
+        url: url,
+        complete: function (res) {
+            var data = res.responseJSON,
+                assessment = createQuizdata(data.assessment.name);
+                assessment.General.id = data.assessment.id;
+                assessment.General.timer = data.assessment.timer_in_minutes * 60; // to seconds
+                assessment.General.is_smith_assessment = true;
+                assessment.Questions = data.questions;
+                assessment.Context = context;
+            if (!context.ou) {
+                try {
+                    context.ou = CSVal.context.ouID;
+                } catch (e) {
+                    context.ou = null;
+                }
+            }
+            if (!context.ui) {
+                try {
+                    $.get(SMI.getUrls('who_am_i'), function (d) {
+                        context.ui = d.Identifier;
+                        buildQuiz(assessment, context);
+                    });
+                } catch (e) {
+                    context.ui = null;
+                    buildQuiz(assessment, context);
+                }
+            } else {
+                buildQuiz(assessment, context);
+            }
+        },
+        headers: {}
+    });
+}
+
 /**
     Quiz Pre Functions
 **/
 function getQuestionModel(questionType) {
-    switch (questionType) {
-        case 'Matching':
+    switch (questionType.toLowerCase()) {
+        case 'matching':
             return Matching;
-        case 'All That Apply':
+        case 'all that apply':
+        case 'multiple select':
             return AllThatApply;
-        case 'Multiple Choice':
+        case 'multiple choice':
+        case 'true false':
             return MultipleChoice;
-        case 'Fill In The Blank':
+        case 'fill in the blank':
+        case 'arithmetic':
             return FillInTheBlank;
-        case 'Math':
+        case 'math':
             return Arithmetic;
-        case 'Ordering':
+        case 'ordering':
             return Ordering;
         default:
             return null;
@@ -142,11 +239,17 @@ function getQuiz(idx) {
 
 function startQuiz(i) {
     initialSaved();
+    startTimer();
     if (!i || i instanceof Event) {
         i = 0;
     }
-    currentIndex = i;
-    getQuiz(currentIndex);
+    if (quizData.General.is_smith_assessment && quizData.Questions.length > 0 && quizData.Questions.length-1 === currentIndex && quizData.General.id) {
+        currentIndex = i;
+        getAssessment(quizData.General.id, quizData.Context);
+    } else {
+        currentIndex = i;
+        getQuiz(currentIndex);
+    }
 }
 
 function havePostQuizText(data) {
@@ -299,8 +402,10 @@ function getPreQuizButtons() {
 }
 
 function getPostQuizButtons() {
-    var temp = BUTTONS.startQuiz;
-    temp.label = 'Restart';
+    var temp = {
+        label: 'Restart',
+        className: BUTTONS.startQuiz.className
+    };
     return [getButtonElement(temp), getButtonElement(BUTTONS.finish)];
 }
 
@@ -315,8 +420,10 @@ function getQuizButtons(data) {
             if (havePostQuiz(data)) {
                 buttons.push(getButtonElement(BUTTONS.endQuiz));
             } else {
-                temp = BUTTONS.startQuiz;
-                temp.label = 'Restart';
+                temp = {
+                    label: 'Restart',
+                    className: BUTTONS.startQuiz.className
+                };
                 buttons.push(getButtonElement(temp));
                 buttons.push(getButtonElement(BUTTONS.finish));
             }
@@ -387,7 +494,74 @@ function getQuizHeader(data) {
 }
 
 function setQuizHeader(el) {
-    $('header').empty().append(el);
+    $('header').empty();
+    if (Array.isArray(el)) {
+        el.forEach(
+            function (i) {
+                $('header').append(el);
+            }
+        )
+    } else {
+        $('header').append(el);
+    }
+}
+
+function getTimer() {
+    var temp = document.createElement('div');
+    temp.classList.add('quiz-timer');
+    temp.appendChild(
+        document.createElement('h1')
+    );
+    return temp;
+}
+
+function setTimer(time) {
+    timer = {
+        m: Math.floor(time/60),
+        s: time%60
+    };
+}
+
+function formatTimer(obj) {
+    var a = obj.m > 9? String(obj.m) : '0'+obj.m,
+        b = obj.s > 9? String(obj.s) : '0'+obj.s;
+    return a + ':' + b;
+}
+
+function updateTimer(s) {
+    var temp = document.querySelector('.quiz-timer h1');
+    temp.innerHTML = s? s : formatTimer(timer);
+}
+
+function decrementTimer() {
+    if (timer.s > -1) {
+        timer.s--;
+        if (timer.s < 0) {
+            timer.m--;
+             if (timer.m < 0) {
+                 // Times up
+             } else {
+                 timer.s = 59;
+             }
+        }
+    }
+}
+
+function startTimer() {
+    if (!timer.interval) {
+        timer.interval = setInterval(function() {
+            if (timer.s < 0) {
+                console.log('Stop Timer');
+                clearInterval(timer.interval);
+                updateTimer('00:00');
+            } else {
+                decrementTimer();
+                updateTimer();
+            }
+        },
+        1000
+        );
+    }
 }
 
 function initialSaved() {
@@ -403,7 +577,15 @@ function initialSaved() {
 
 function buildQuiz(jsonFile, context) {
     'use strict';
-    $.getJSON(jsonFile, function (data) {
+
+    var temp = function(data) {
+
+        // clear all content
+        repopulateContainer(SELECTORS.header);
+        repopulateContainer(SELECTORS.content);
+        repopulateContainer(SELECTORS.feedbacks);
+        repopulateContainer(SELECTORS.actions);
+
         quizData = data;
 
         // Check if user device is mobile
@@ -417,8 +599,13 @@ function buildQuiz(jsonFile, context) {
             }
         );
 
-        var quizHeader = getQuizHeader(quizData);
+        var quizHeader = [getQuizHeader(quizData)];
+        if (quizData.General.timer) {
+            setTimer(quizData.General.timer);
+            quizHeader.push(getTimer());
+        }
         setQuizHeader(quizHeader);
+        updateTimer();
 
         context.gi = quizData.General.gradeId;
         context.ai = quizData.General.awardId;
@@ -453,7 +640,17 @@ function buildQuiz(jsonFile, context) {
                 SMI.getUserGrade(callback);
             }
         }
-    });
+    }
+
+    if (typeof jsonFile === 'string') {
+        $.getJSON(jsonFile, function (data) {
+            temp(data);
+        });
+    } else {
+        temp(jsonFile);
+    }
+
+
 }
 
 function getAnswer(model, data, question) {

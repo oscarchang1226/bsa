@@ -69,6 +69,8 @@ header h1 {
     font-size: 40px;
     line-height: 72px;
     letter-spacing: -1px;
+    display: inline-block;
+    width:80%;
 }
 main {
     padding: 16px;
@@ -213,6 +215,11 @@ div.quiz-post-media > * {
 .graded-text b {
     font-size: 28px;
     margin: auto 8px;
+}
+.quiz-timer {
+    display: inline-block;
+    width: 20%;
+    text-align: right;
 }
 /***************************************************************************/
 /** Matching Type Styles **/
