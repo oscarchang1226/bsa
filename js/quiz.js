@@ -534,7 +534,7 @@ function updateTimer(s) {
 }
 
 function decrementTimer() {
-    if (timer.s > -1) {
+    if (timer.s > -1 ) {
         timer.s--;
         if (timer.s < 0) {
             timer.m--;
@@ -550,7 +550,7 @@ function decrementTimer() {
 function startTimer() {
     if (!timer.interval) {
         timer.interval = setInterval(function() {
-            if (timer.s < 0) {
+            if (timer.s === 0 && timer.m === 0) {
                 console.log('Stop Timer');
                 clearInterval(timer.interval);
                 updateTimer('00:00');
