@@ -159,6 +159,7 @@ function getAssessment(assessmentId, context) {
                 assessment.General.timer = data.assessment.timer_in_minutes * 60; // to seconds
                 assessment.General.is_smith_assessment = true;
                 assessment.Questions = data.questions;
+                assessment.General.tag = context.tag;
             if (!context.ou) {
                 try {
                     context.ou = CSVal.context.ouID;
@@ -184,7 +185,7 @@ function getAssessment(assessmentId, context) {
     });
 }
 
-function storeAttempt(id, ou, ui) {
+function storeAttempt(id, ou, ui, tag) {
     if (id && ou && ui) {
         var settings = {
             type: 'POST',
@@ -194,7 +195,8 @@ function storeAttempt(id, ou, ui) {
             data: JSON.stringify({
                 assessment_id: id,
                 module_id: ou,
-                taker_id: ui
+                taker_id: ui,
+                tag: tag
             }),
             headers: {
                 Accept: 'application/json',
@@ -311,7 +313,7 @@ function startQuiz(i) {
         getQuiz(currentIndex);
         if (currentIndex === 0) {
             startTimer();
-            storeAttempt(quizData.General.id, SMI.currentContext.ou, SMI.currentContext.ui);
+            storeAttempt(quizData.General.id, SMI.currentContext.ou, SMI.currentContext.ui, SMI.currentContext.tag);
         }
     }
 }
