@@ -5,6 +5,7 @@ var $ = jQuery,
     CSVal = CSVal || {},
     savedActivity = [],
     savedScores = [],
+    savedTimes = [];
     savedMaxScore = [],
     currentIndex = 0,
     gradedScoreObject = {},
@@ -158,7 +159,6 @@ function getAssessment(assessmentId, context) {
                 assessment.General.timer = data.assessment.timer_in_minutes * 60; // to seconds
                 assessment.General.is_smith_assessment = true;
                 assessment.Questions = data.questions;
-                assessment.Context = context;
             if (!context.ou) {
                 try {
                     context.ou = CSVal.context.ouID;
@@ -182,6 +182,67 @@ function getAssessment(assessmentId, context) {
         },
         headers: {}
     });
+}
+
+function storeAttempt(id, ou, ui) {
+    if (id && ou && ui) {
+        var settings = {
+            type: 'POST',
+            url: buildSmithUrl('/attempts'),
+            dataType: 'json',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                assessment_id: id,
+                module_id: ou,
+                taker_id: ui
+            }),
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json'
+            },
+            complete: function(res) {
+                var data = res.responseJSON;
+                quizData.General.attempt_id = data.id;
+            }
+        };
+        callSmithApi(settings);
+    }
+}
+
+function updateAttempt(id, questions, savedScores, savedTimes) {
+    if (id && questions && savedScores && savedTimes) {
+        var temp = {
+                questions: {}
+            },
+            settings = {
+                type: 'PATCH',
+                url: buildSmithUrl('/attempts/' + id),
+                dataType: 'json',
+                contentType: 'application/json',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                complete: function(res) {
+                    console.log(res.responseJSON);
+                }
+            };
+        questions = questions.map(function (q, index) {
+            q.attemptScore = savedScores[index];
+            q.attemptTime = savedTimes[index];
+            return q;
+        });
+        questions.forEach(function (q) {
+            if (typeof q.attemptScore === 'number') {
+                temp.questions[q.questionId] = {
+                    time: q.attemptTime,
+                    score: q.attemptScore
+                }
+            }
+        });
+        settings.data = JSON.stringify(temp);
+        callSmithApi(settings);
+    }
 }
 
 /**
@@ -239,16 +300,19 @@ function getQuiz(idx) {
 
 function startQuiz(i) {
     initialSaved();
-    startTimer();
     if (!i || i instanceof Event) {
         i = 0;
     }
     if (quizData.General.is_smith_assessment && quizData.Questions.length > 0 && quizData.Questions.length-1 === currentIndex && quizData.General.id) {
         currentIndex = i;
-        getAssessment(quizData.General.id, quizData.Context);
+        getAssessment(quizData.General.id, SMI.currentContext);
     } else {
         currentIndex = i;
         getQuiz(currentIndex);
+        if (currentIndex === 0) {
+            startTimer();
+            storeAttempt(quizData.General.id, SMI.currentContext.ou, SMI.currentContext.ui);
+        }
     }
 }
 
@@ -291,9 +355,13 @@ function getPostQuiz(data, containerParent) {
         score = savedScores.reduce(function (acc, score) {
                 return acc + score;
         }, 0),
-        maxScore = savedMaxScore.reduce(function (acc, score) {
-                return acc + score;
-        }, 0);
+        maxScore = quizData.Questions.reduce(function (acc, question) {
+                return acc + question.maxScoreValue;
+        }, 0),
+        temp = (score / maxScore * 100).toFixed(2);
+    if (isNaN(temp)) {
+        temp = 0.00;
+    }
     // if (havePostQuizText(data.General)) {
     //     text = getText(data.General.postQuizText, 'quiz-post-text');
     //     elList.push(text);
@@ -308,7 +376,7 @@ function getPostQuiz(data, containerParent) {
     // }
     text = document.createElement('p');
     text.classList.add('quiz-post-text', 'graded-text');
-    text.innerHTML = 'You scored <b>'+ (score / maxScore * 100).toFixed(2) +'%</b> on this assessment.';
+    text.innerHTML = 'You scored <b>'+ temp +'%</b> on this assessment.';
     elList.push(text);
     return elList;
 }
@@ -357,6 +425,8 @@ function getMedia(media, containerParent) {
 }
 
 function endQuiz() {
+    stopTimer();
+    updateAttempt(quizData.General.attempt_id, quizData.Questions, savedScores, savedTimes);
     if (havePostQuiz(quizData)) {
         repopulateContainer(SELECTORS.header);
         repopulateContainer(SELECTORS.feedbacks);
@@ -374,8 +444,8 @@ function finish() {
     var score = savedScores.reduce(function (acc, score) {
             return acc + score;
         }, 0),
-        maxScore = savedMaxScore.reduce(function (acc, score) {
-            return acc + score;
+        maxScore = quizData.Questions.reduce(function (acc, question) {
+            return acc + question.maxScoreValue;
         }, 0);
     if (parent && parent.document) {
         var nextButton = parent.document.querySelector('a.d2l-iterator-button-next');
@@ -516,10 +586,12 @@ function getTimer() {
 }
 
 function setTimer(time) {
-    timer = {
-        m: Math.floor(time/60),
-        s: time%60
-    };
+    if (timer) {
+        timer = {
+            m: Math.floor(time/60),
+            s: time%60
+        };
+    }
 }
 
 function formatTimer(obj) {
@@ -529,12 +601,14 @@ function formatTimer(obj) {
 }
 
 function updateTimer(s) {
-    var temp = document.querySelector('.quiz-timer h1');
-    temp.innerHTML = s? s : formatTimer(timer);
+    if (quizData.General.timer) {
+        var temp = document.querySelector('.quiz-timer h1');
+        temp.innerHTML = s? s : formatTimer(timer);
+    }
 }
 
 function decrementTimer() {
-    if (timer.s > -1 ) {
+    if (quizData.General.timer && timer.s > -1 ) {
         timer.s--;
         if (timer.s < 0) {
             timer.m--;
@@ -548,11 +622,11 @@ function decrementTimer() {
 }
 
 function startTimer() {
-    if (!timer.interval) {
+    if (quizData.General.timer && !timer.interval) {
         timer.interval = setInterval(function() {
             if (timer.s === 0 && timer.m === 0) {
-                console.log('Stop Timer');
-                clearInterval(timer.interval);
+                endQuiz();
+                currentIndex = quizData.Questions.length-1;
                 updateTimer('00:00');
             } else {
                 decrementTimer();
@@ -564,12 +638,24 @@ function startTimer() {
     }
 }
 
+function stopTimer() {
+    if (timer.interval) {
+        clearInterval(timer.interval);
+    }
+}
+
+function getTimeInSeconds(timer) {
+    var currentTime = timer.m * 60 + timer.s;
+    return quizData.General.timer - currentTime - savedTimes.reduce(function(acc, time){ return acc + time; }, 0);
+}
+
 function initialSaved() {
-    savedActivity = [], savedScores = [], savedMaxScore = [];
+    savedActivity = [], savedScores = [], savedTimes = [], savedMaxScore = [];
     quizData.Questions.forEach(
         function () {
             savedActivity.push(null);
             savedScores.push(null);
+            savedTimes.push(null);
             savedMaxScore.push(null);
         }
     );
@@ -671,6 +757,9 @@ function checkAnswer() {
         // TODO: Implement model check answer with current question data
         result = currentModel.checkAnswer(currentQuestion);
         savedScores[currentIndex] = result.score;
+        if (quizData.General.timer) {
+            savedTimes[currentIndex] = getTimeInSeconds(timer);
+        }
         if (!savedMaxScore[currentIndex]) {
             savedMaxScore[currentIndex] = result.maxScore;
         }
@@ -685,8 +774,8 @@ function checkAnswer() {
         score = savedScores.reduce(function (acc, score) {
                 return acc + score;
         }, 0);
-        maxScore = savedMaxScore.reduce(function (acc, score) {
-            return acc + score;
+        maxScore = quizData.Questions.reduce(function (acc, question) {
+            return acc + question.maxScoreValue;
         }, 0);
         temp = SMI.generateIncomingGradeValue(score, 'Graded by SMI IAT');
         SMI.putUserGrade(null, temp);
@@ -817,6 +906,7 @@ function nextQuestion() {
 function resetAll() {
     savedActivity[currentIndex] = null;
     savedScores[currentIndex] = null;
+    savedTimes[currentIndex] = null;
     getQuiz(currentIndex);
 }
 
