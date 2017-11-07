@@ -14,6 +14,7 @@ var $ = jQuery,
     currentQuestion = null,
     quizData = {},
     timer = {},
+    quizToken = {},
     SELECTORS = {
         header: '.header',
         content: '.content',
@@ -123,20 +124,26 @@ function callSmithApi(settings) {
     if (!settings || !settings.url) {
         return;
     }
-    $.ajax({
-        type: 'POST',
-        url: buildSmithUrl('/token'),
-        headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json'
-        },
-        complete: function(res) {
-            if (res.responseJSON.access_token && res.responseJSON.token_type) {
-                settings.headers.Authorization = res.responseJSON.token_type + ' ' + res.responseJSON.access_token;
-                $.ajax(settings);
+    if (quizToken.access_token) {
+        settings.headers.Authorization = quizToken.token_type + ' ' + quizToken.access_token;
+        $.ajax(settings);
+    } else {
+        $.ajax({
+            type: 'POST',
+            url: buildSmithUrl('/token'),
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json'
+            },
+            complete: function(res) {
+                if (res.responseJSON.access_token && res.responseJSON.token_type) {
+                    quizToken = res.responseJSON;
+                    settings.headers.Authorization = quizToken.token_type + ' ' + quizToken.access_token;
+                    $.ajax(settings);
+                }
             }
-        }
-    });
+        });
+    }
 }
 
 function getAssessment(assessmentId, context) {
@@ -159,7 +166,7 @@ function getAssessment(assessmentId, context) {
                 assessment.General.timer = data.assessment.timer_in_minutes * 60; // to seconds
                 assessment.General.is_smith_assessment = true;
                 assessment.Questions = data.questions;
-                assessment.General.tag = context.tag;
+                assessment.General.office_code = context.office_code;
             if (!context.ou) {
                 try {
                     context.ou = CSVal.context.ouID;
@@ -185,8 +192,8 @@ function getAssessment(assessmentId, context) {
     });
 }
 
-function storeAttempt(id, ou, ui, tag) {
-    if (id && ou && ui) {
+function storeAttempt(id, ou, ui, officeCode) {
+    if (id && ou && ui && officeCode) {
         var settings = {
             type: 'POST',
             url: buildSmithUrl('/attempts'),
@@ -196,7 +203,7 @@ function storeAttempt(id, ou, ui, tag) {
                 assessment_id: id,
                 module_id: ou,
                 taker_id: ui,
-                tag: tag
+                office_code: officeCode
             }),
             headers: {
                 Accept: 'application/json',
@@ -305,15 +312,18 @@ function startQuiz(i) {
     if (!i || i instanceof Event) {
         i = 0;
     }
+    console.log(quizData.General);
     if (quizData.General.is_smith_assessment && quizData.Questions.length > 0 && quizData.Questions.length-1 === currentIndex && quizData.General.id) {
+        console.log('Restarting');
         currentIndex = i;
         getAssessment(quizData.General.id, SMI.currentContext);
     } else {
         currentIndex = i;
         getQuiz(currentIndex);
         if (currentIndex === 0) {
+            console.log('Starting');
             startTimer();
-            storeAttempt(quizData.General.id, SMI.currentContext.ou, SMI.currentContext.ui, SMI.currentContext.tag);
+            storeAttempt(quizData.General.id, SMI.currentContext.ou, SMI.currentContext.ui, SMI.currentContext.office_code);
         }
     }
 }
@@ -703,8 +713,15 @@ function buildQuiz(jsonFile, context) {
         if (!quizData.General.gradeId) {
             var preQuiz = getPreQuiz(quizData);
             var preQuizButtons = getPreQuizButtons();
-            repopulateContainer(SELECTORS.content, preQuiz);
-            repopulateContainer(SELECTORS.actions, preQuizButtons);
+            if (quizData.Questions && quizData.Questions.length) {
+                repopulateContainer(SELECTORS.content, preQuiz);
+                repopulateContainer(SELECTORS.actions, preQuizButtons);
+            } else {
+                var temp = document.createElement('p');
+                temp.appendChild(document.createTextNode('No questions available.'));
+                preQuiz.push(temp);
+                repopulateContainer(SELECTORS.content, preQuiz);
+            }
         } else {
             SMI.getGrade(function (res) {
                 if (res.status === 200) {
@@ -719,8 +736,15 @@ function buildQuiz(jsonFile, context) {
                 }
                 var preQuiz = getPreQuiz(quizData);
                 var preQuizButtons = getPreQuizButtons();
-                repopulateContainer(SELECTORS.content, preQuiz);
-                repopulateContainer(SELECTORS.actions, preQuizButtons);
+                if (quizData.Questions && quizData.Questions.length) {
+                    repopulateContainer(SELECTORS.content, preQuiz);
+                    repopulateContainer(SELECTORS.actions, preQuizButtons);
+                } else {
+                    var temp = document.createElement('p');
+                    temp.appendChild(document.createTextNode('No questions available.'));
+                    preQuiz.push(temp);
+                    repopulateContainer(SELECTORS.content, preQuiz);
+                }
             }
             if (!context.ui) {
                 callback({});
