@@ -166,7 +166,6 @@ function getAssessment(assessmentId, context) {
                 assessment.General.timer = data.assessment.timer_in_minutes * 60; // to seconds
                 assessment.General.is_smith_assessment = true;
                 assessment.Questions = data.questions;
-                assessment.General.office_code = context.office_code;
             if (!context.ou) {
                 try {
                     context.ou = CSVal.context.ouID;
@@ -192,8 +191,8 @@ function getAssessment(assessmentId, context) {
     });
 }
 
-function storeAttempt(id, ou, ui, officeCode) {
-    if (id && ou && ui && officeCode) {
+function storeAttempt(id, ou, ui) {
+    if (id && ou && ui) {
         var settings = {
             type: 'POST',
             url: buildSmithUrl('/attempts'),
@@ -202,8 +201,7 @@ function storeAttempt(id, ou, ui, officeCode) {
             data: JSON.stringify({
                 assessment_id: id,
                 module_id: ou,
-                taker_id: ui,
-                office_code: officeCode
+                taker_id: ui
             }),
             headers: {
                 Accept: 'application/json',
@@ -323,7 +321,7 @@ function startQuiz(i) {
         if (currentIndex === 0) {
             console.log('Starting');
             startTimer();
-            storeAttempt(quizData.General.id, SMI.currentContext.ou, SMI.currentContext.ui, SMI.currentContext.office_code);
+            storeAttempt(quizData.General.id, SMI.currentContext.ou, SMI.currentContext.ui);
         }
     }
 }
