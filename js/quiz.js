@@ -116,82 +116,40 @@ function createQuizdata(quizName, gradeId, awardId) {
     }
 }
 
-function buildSmithUrl(endpoint) {
-    return 'http://localhost:4040/api' + endpoint;
-}
-
-function callSmithApi(settings) {
-    if (!settings || !settings.url) {
-        return;
-    }
-    if (quizToken.access_token) {
-        settings.headers.Authorization = quizToken.token_type + ' ' + quizToken.access_token;
-        $.ajax(settings);
-    } else {
-        $.ajax({
-            type: 'POST',
-            url: buildSmithUrl('/token'),
-            headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json'
-            },
-            complete: function(res) {
-                if (res.responseJSON.access_token && res.responseJSON.token_type) {
-                    quizToken = res.responseJSON;
-                    settings.headers.Authorization = quizToken.token_type + ' ' + quizToken.access_token;
-                    $.ajax(settings);
-                }
-            }
-        });
-    }
-}
-
 function getAssessment(assessmentId, context) {
-    var url,
-        temp;
-    if (isNaN(assessmentId)) {
-        // assume its a url
-        url = assessmentId;
-    } else {
-        // assume its a assessment id
-        url = buildSmithUrl('/assessments/' + assessmentId + '/attempt');
-    }
-    callSmithApi({
-        type: 'GET',
-        url: url,
-        complete: function (res) {
-            var data = res.responseJSON,
-                assessment = createQuizdata(data.assessment.name);
-                assessment.General.id = data.assessment.id;
-                assessment.General.timer = data.assessment.timer_in_minutes * 60; // to seconds
-                assessment.General.is_smith_assessment = true;
-                assessment.Questions = data.questions;
-            if (!context.ou) {
-                try {
-                    context.ou = CSVal.context.ouID;
-                } catch (e) {
-                    context.ou = null;
-                }
+    var callback = function (res) {
+        var data = res.responseJSON,
+            assessment = createQuizdata(data.assessment.name);
+            assessment.General.id = data.assessment.id;
+            assessment.General.timer = data.assessment.timer_in_minutes * 60; // to seconds
+            assessment.General.is_smith_assessment = true;
+            assessment.Questions = data.questions;
+        if (!context.ou) {
+            try {
+                context.ou = CSVal.context.ouID;
+            } catch (e) {
+                context.ou = null;
             }
-            if (!context.ui) {
-                try {
-                    $.get(SMI.getUrls('who_am_i'), function (d) {
-                        context.ui = d.Identifier;
-                        buildQuiz(assessment, context);
-                    });
-                } catch (e) {
-                    context.ui = null;
+        }
+        if (!context.ui) {
+            try {
+                $.get(SMI.getUrls('who_am_i'), function (d) {
+                    context.ui = d.Identifier;
                     buildQuiz(assessment, context);
-                }
-            } else {
+                });
+            } catch (e) {
+                context.ui = null;
                 buildQuiz(assessment, context);
             }
-        },
-        headers: {}
-    });
+        } else {
+            buildQuiz(assessment, context);
+        }
+    };
+    Smith.getAssessment(assessmentId, callback);
 }
 
 function storeAttempt(id, ou, ui) {
+    return;
     if (id && ou && ui) {
         var settings = {
             type: 'POST',
@@ -217,6 +175,7 @@ function storeAttempt(id, ou, ui) {
 }
 
 function updateAttempt(id, questions, savedScores, savedTimes) {
+    return;
     if (id && questions && savedScores && savedTimes) {
         var temp = {
                 questions: {}

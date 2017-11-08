@@ -90,6 +90,9 @@ var AllThatApply = (function () {
             }
             return a;
         }).filter(function (a) { return a.selected; });
+        if (score > maxScore) {
+            score = maxScore;
+        }
         return {
             result: result,
             score: score,
@@ -107,9 +110,11 @@ var AllThatApply = (function () {
         title.appendChild(document.createTextNode('Feedback'));
         ul.classList.add('feedback-list');
         result.result.forEach(function (r) {
-            var liText = document.createElement('li');
-            liText.appendChild(document.createTextNode(r.feedBack));
-            ul.appendChild(liText);
+            if (r.feedBack) {
+                var liText = document.createElement('li');
+                liText.appendChild(document.createTextNode(r.feedBack));
+                ul.appendChild(liText);
+            }
         });
         return [
             correctAnswer,
