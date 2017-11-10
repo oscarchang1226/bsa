@@ -17,25 +17,35 @@ var AllThatApply = (function () {
         //   "feedBack": "Correct! Jem is Atticus' son.",
         //   "scoreValue": 1
         // }, ...]
-        var div, answers;
+        var div, answers, correctAnswers;
         div = document.createElement('div');
         div.classList.add('answer-container');
+        correctAnswers = data.answers.filter(function (a) {
+            return a.scoreValue;
+        });
+        correctAnswers = correctAnswers.length;
         answers = data.answers.map(function (a, idx) {
-            var elId, el, label;
-            elId = 'checkbox' + idx;
+            a.elId = 'checkbox' + idx;
+            a.elValue = idx;
+            return a;
+        });
+        answers = answers.sort(function () {
+            return 0.5 - Math.random();
+        });
+        answers.forEach(function (a) {
+            var el, label;
             el = document.createElement('input');
             el.setAttribute('type', 'checkbox');
-            el.setAttribute('id', elId);
-            el.setAttribute('value', idx);
+            el.setAttribute('id', a.elId);
+            el.setAttribute('value', a.elValue);
             label = document.createElement('label');
             label.classList.add('checkbox-label');
-            label.setAttribute('for', elId);
+            label.setAttribute('for', a.elId);
             label.appendChild(document.createTextNode(a.answerText));
             div.appendChild(el);
             div.appendChild(label);
-            return div;
         });
-        return answers;
+        return [div];
     }
 
     function getResultAttributes(result, getCorrects) {
@@ -67,16 +77,24 @@ var AllThatApply = (function () {
     }
 
     function checkAnswer(data) {
-        var score, maxScore, correctAnswer, selected, result;
+        var score, maxScore, scoreValue, scoreAdjust, correctAnswer, selected, result;
         score = 0;
+        scoreAdjust = 0;
         maxScore = data.maxScoreValue;
         correctAnswer = '';
         selected = '';
+        scoreValue = maxScore / data.answers.reduce(function (carrier, a) {
+            if (a.scoreValue) {
+                carrier += 1;
+            }
+            return carrier;
+        }, 0);
         result = data.answers.map(function (a, idx) {
             var inputId = 'checkbox' + idx;
             if (a.scoreValue) {
                 correctAnswer = correctAnswer.length > 0 ?
                         correctAnswer + ', ' + a.answerText : a.answerText;
+                a.scoreValue = scoreValue;
             }
             a.selected = false;
             a.isCorrect = false;
@@ -85,13 +103,21 @@ var AllThatApply = (function () {
                 selected = selected.length > 0 ?
                         selected + ', ' + a.answerText : a.answerText;
                 a.isCorrect = a.scoreValue > 0;
-                score += a.scoreValue || -1;
+                if (a.scoreValue) {
+                    score += a.scoreValue;
+                } else {
+                    scoreAdjust += scoreValue;
+                }
                 score = score < 0 ? 0 : score;
             }
             return a;
         }).filter(function (a) { return a.selected; });
+        score = score - scoreAdjust;
+        score = Number(score.toFixed(1));
         if (score > maxScore) {
             score = maxScore;
+        } else if (score < 0) {
+            score = 0;
         }
         return {
             result: result,

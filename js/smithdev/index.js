@@ -12,6 +12,7 @@ JS File that provides utilities for Smith University
     window.Smith = {
         isDev: true,
         path: 'https://udev.smithbuy.com/api/',
+        // path: 'http://localhost:4040/api/',
         buildUrl: function (url) {
             return this.path + url;
         },
@@ -88,6 +89,11 @@ JS File that provides utilities for Smith University
                 data: JSON.stringify(data)
             };
             this.call(settings);
+        },
+        validateAssessment: function (data) {
+            return data.Questions.filter(function (q) {
+                return q.answers.filter(a => a.scoreValue).length === 0;
+            });
         }
     };
 }(jQuery));

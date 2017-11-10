@@ -269,16 +269,13 @@ function startQuiz(i) {
     if (!i || i instanceof Event) {
         i = 0;
     }
-    console.log(quizData.General);
     if (quizData.General.is_smith_assessment && quizData.Questions.length > 0 && quizData.Questions.length-1 === currentIndex && quizData.General.id) {
-        console.log('Restarting');
         currentIndex = i;
         getAssessment(quizData.General.id, SMI.currentContext);
     } else {
         currentIndex = i;
         getQuiz(currentIndex);
         if (currentIndex === 0) {
-            console.log('Starting');
             startTimer();
             storeAttempt(quizData.General.id, SMI.currentContext.ou, SMI.currentContext.ui);
         }

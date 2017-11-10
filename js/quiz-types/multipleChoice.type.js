@@ -21,22 +21,28 @@ var MultipleChoice = (function () {
         **/
         var div = document.createElement('div'),
             answers = data.answers.map(function (a, idx) {
-                var elId = 'radioButton' + idx,
-                    el = document.createElement('input'),
-                    label = document.createElement('label');
-                el.setAttribute('type', 'radio');
-                el.setAttribute('id', elId);
-                el.setAttribute('value', idx);
-                el.setAttribute('name', 'selectedAnswer');
-                label.appendChild(document.createTextNode(a.answerText));
-                label.classList.add('radio-label');
-                label.setAttribute('for', elId);
-                div.appendChild(el);
-                div.appendChild(label);
-                return div;
+                a.elId = 'radioButton' + idx;
+                a.elValue = idx;
+                return a;
             });
+        answers = answers.sort(function () {
+            return 0.5 - Math.random();
+        });
+        answers.forEach(function (a) {
+            var el = document.createElement('input'),
+                label = document.createElement('label');
+            el.setAttribute('type', 'radio');
+            el.setAttribute('id', a.elId);
+            el.setAttribute('value', a.elValue);
+            el.setAttribute('name', 'selectedAnswer');
+            label.appendChild(document.createTextNode(a.answerText));
+            label.classList.add('radio-label');
+            label.setAttribute('for', a.elId);
+            div.appendChild(el);
+            div.appendChild(label);
+        });
         div.classList.add('answer-container');
-        return answers;
+        return [div];
     }
 
     function checkAnswer(data) {
