@@ -1,0 +1,153 @@
+{
+  "General":{
+    "QuizName": "How are chips made? Quiz",
+    "HeadingLevel": 1,
+    "instructions": "none",
+    "feedBackType":"continuous",
+    "forceCorrect":false,
+    "repeatOnComplete":false,
+    "allowNone":false,
+    "allowPrevious":true,
+    "showHints": false,
+    "allowPartial": false,
+    "randomize": true,
+    "subtractWrong": true,
+    "preQuizText":"<p>Press Start Activity to begin the assessment.</p>",
+    "preQuizMedia":"none",
+    "postQuizText":"none",
+    "postQuizMedia":[
+      {
+        "type": "text",
+        "content": ""
+      }
+    ]
+  },
+  "Questions":[
+    {
+      "questionType":"All That Apply",
+      "maxScoreValue": 2,
+      "questionText":"What are the names of Atticus' two children?",
+      "hintText":"He had one son, and one daughter",
+      "hintMedia":"none",
+      "answers": [
+        {
+          "answerText": "Jem",
+          "feedBack": "Correct! Jem is Atticus' son.",
+          "scoreValue": 1
+        },
+        {
+          "answerText": "Scout",
+          "feedBack": "Correct! Scout is Atticus' daughter.",
+          "scoreValue": 1
+        },
+        {
+          "answerText": "Boo",
+          "feedBack": "Not quite - Boo Radley is a part of the Radley family!"
+        }
+      ]
+    },
+    {
+      "questionType":"Multiple Choice",
+      "maxScoreValue": 1,
+      "questionText":"What is Scout's real name?",
+      "hintText":"none",
+      "hintMedia":"none",
+      "answers": [
+        {
+          "answerText": "Jean-Louise Finch",
+          "feedBack": "Correct!",
+          "scoreValue": 1
+        },
+        {
+          "answerText": "Carolyn-Louise Finch",
+          "feedBack": "Incorrect! That isn't Scout's real name."
+        },
+        {
+          "answerText": "Bonnie-Sue Finch",
+          "feedBack": "Incorrect! That isn't Scout's real name."
+        }
+      ]
+    },
+    {
+      "questionType":"Fill In The Blank",
+      "maxScoreValue": 4,
+      "questionText":"To BLANK1 a BLANK2 is probably the most widely read BLANK3 dealing with race in BLANK4.",
+      "hintText":"Known to mimic the songs of other birds.",
+      "hintMedia":[
+        {
+          "type": "image",
+          "src": "http://ih.constantcontact.com/fs077/1101742975031/img/201.jpg",
+          "description": "A mockingbird.",
+          "mediaLink": "http://en.wikipedia.org/wiki/Mockingbird"
+        }
+      ],
+      "answers": [
+        {
+          "answerText": "KILL",
+          "feedBack": "none",
+          "scoreValue": 1
+        },
+        {
+          "answerText": "MOCKINGBIRD",
+          "feedBack": "none",
+          "scoreValue": 1
+        },
+        {
+          "answerText": "BOOK",
+          "scoreValue": 1,
+          "feedBack": "none",
+          "altAnswers":[
+            {
+              "answerText": "NOVEL",
+              "feedBack": "none",
+              "scoreValue": 1
+            },
+            {
+              "answerText": "LITERATURE",
+              "feedBack": "none",
+              "scoreValue": 1
+            },
+            {
+              "answerText": "PIECE OF LITERATURE",
+              "feedBack": "none",
+              "scoreValue": 1
+            }
+          ]
+        },
+        {
+          "answerText": "AMERICA",
+          "feedBack": "none",
+          "scoreValue": 1,
+          "altAnswers":[
+            {
+              "answerText": "THE UNITED STATES",
+              "feedBack": "none",
+              "scoreValue": 1
+            },
+            {
+              "answerText": "THE USA",
+              "feedBack": "none",
+              "scoreValue": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "questionType":"Math",
+      "maxScoreValue": 1,
+      "questionText":"144 / 12 = BLANK1",
+      "hintText":"none",
+      "hintMedia":"none",
+      "answers": [
+        {
+          "answerText": "12",
+          "feedBack": "none",
+          "scoreValue": 1
+        }
+      ]
+    }
+
+  ]
+
+}

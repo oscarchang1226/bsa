@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta http-equiv="X-UA-Compatible" content="IE=edge" >
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, user-scalable=no">
+      <title>My Quiz Activity</title>
+      <link href="css/bootstrap.min.css" rel="stylesheet">
+      <link href="css/quiz.min.css" rel="stylesheet">
+      <link href="css/main.min.css" rel="stylesheet">
+   </head>
+
+   <body>
+        <div id="wrapper">
+          <div class="container">
+             <section id="dbox"></section>
+          </div>
+        </div>
+
+        <script src="https://s.brightspace.com/lib/jquery/1.11.0/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="thirdpartylib/jquery/jquery-1.11.0.min.js"><\/script>')</script>
+
+        <!-- <script src="thirdpartylib/d2l-session-auth.min.js"></script> -->
+        <script src="thirdpartylib/csval-lib.min.js"></script>
+        <script src="thirdpartylib/sha.js"></script>
+        <script src="thirdpartylib/valence.js"></script>
+
+        <script src="js/custom/valence/index.js"></script>
+        <script src="js/custom/smithdev/index.js"></script>
+
+        <script src="js/quiz.js"></script>
+        <script src="js/custom/quiz/index.js"></script>
+        <script>
+        	$(document).ready(function() {
+        		InlineQuizApp.setupQuiz("data/quiz-data.json", "dbox")
+        	});
+        </script>
+        <noscript>This activity will only load in an online environment with JavaScript enabled.</noscript>
+    </body>
+</html>
