@@ -124,7 +124,7 @@ var Ordering = (function () {
             div.appendChild(span);
             span = document.createElement('span');
             span.classList.add('feedback-answer-label');
-            span.appendChild(document.createTextNode(a.answerText + ' (' + a.feedback + ')'));
+            span.appendChild(document.createTextNode(a.answerText + (a.feedback ? ' (' + a.feedback + ')' : '')));
             div.appendChild(span);
         });
         return [

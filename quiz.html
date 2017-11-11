@@ -35,7 +35,7 @@
         <script src="js/valence/valence-smith.js"></script>
 
         <!-- Smith University Dev -->
-        <script src="js/smithdev/index.js"></script>
+        <script src="/iat/js/custom/smithdev/index.js"></script>
 
         <!-- Smith Quiz -->
         <script src="js/quiz-types/matching.type.js"></script>
@@ -47,10 +47,26 @@
         <script src="js/quiz.js"></script>
         <script>
             // setContext('data/quiz-data.json', {ou: 7143, ui: 213});
-            // getAssessment(5, {ou: 6666, ui:187});
-            // getAssessment(6, {ou: 6670, ui:187});
-            getAssessment(16, {ou: 6666, ui:203});
-            // getAssessment(7, {ou: 6778, ui:185});
+            // getAssessment(21, {ou: 6666, ui:203});
+            // getAssessment(22, {ou: 6666, ui:203});
+            // getAssessment(23, {ou: 6666, ui:203});
+            // getAssessment(12, {ou: 6666, ui:203});
+            // getAssessment(3, {ou: 6666, ui:203});
+
+            var temp = location.search.replace('?', '').split('&');
+            temp.forEach(function (t) {
+                context[t.split('=')[0]] = t.split('=')[1];
+            });
+            if (CSVal.user && CSVal.user.Identifier) {
+                context.ui = CSVal.user.Identifier;
+                context.taker_first = CSVal.user.FirstName;
+                context.taker_last = CSVal.user.LastName;
+            } else {
+                context.ui = 221;
+                context.taker_first = 'Oscar';
+                context.taker_last = 'Chang';
+            }
+            getAssessment(context.assessmentId, context);
         </script>
     </body>
 </html>

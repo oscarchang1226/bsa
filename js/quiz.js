@@ -15,6 +15,7 @@ var $ = jQuery,
     quizData = {},
     timer = {},
     quizToken = {},
+    context = {},
     SELECTORS = {
         header: '.header',
         content: '.content',
@@ -94,7 +95,7 @@ function setContext(jsonFile, context) {
 }
 
 function createQuizdata(quizName, gradeId, awardId) {
-    return {
+    var result = {
         General: {
             "QuizName": quizName || "My Quiz Activity",
             "HeadingLevel": 1,
@@ -113,7 +114,19 @@ function createQuizdata(quizName, gradeId, awardId) {
             "subtractWrong": true,
             "postQuizText": 'You have completed ' + (quizName || "My Quiz Activity")
         }
+    };
+    if (quizName.toLowerCase().indexOf('quiz') > -1) {
+        result.General.preQuizText = "Take a few minutes to self-test what you have just learned before the end of this course. At the end of each course, you'll take a Final Test that covers all the material in the course. You need a 100% to pass, so practicing now will help you succeed. This self-study quiz is NOT graded and feedback is given immediately to help you understand mistakes.";
+    } else if (quizName.toLowerCase().indexOf('test') > -1) {
+        result.General.preQuizText = "This is your Final Test for this course. Please make sure that you have reviewed the material in the videos and in the written portions of the course. Please also make sure that you have done the review quiz to practice the types of questions you may encounter in this Final Test.<br />";
+        result.General.preQuizText += "<br />You will need to get a 100% score on this Test to pass and earn credit (and a badge) for completing the course. If you pass the Test in your first attempt, you will earn five (5) points and a badge. Each attempt after the first, will deducted one point from the possible five for passing. These points add up in the <strongSmith U Leaderboard</strong>, which is a company-wide leaderboard based on individuals and on offices.<br/>";
+        result.General.preQuizText += "<br />After you have passed all of the Tests for all of the graded courses in a series, you will take the Final Exam for the entire series. The Final Exam for this series is TR109: Final Exam.<br />";
+        result.General.preQuizText += "<br />Good luck!";
     }
+    if (result.General.preQuizText) {
+        result.General.preQuizText += '<br /><br />Click <b>Start</b> to begin.';
+    }
+    return result;
 }
 
 function getAssessment(assessmentId, context) {
