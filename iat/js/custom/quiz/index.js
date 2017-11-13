@@ -247,5 +247,65 @@ IAT plugins
                 clearInterval(q.timer.interval);
             }
         };
+
+        q.onSelectChange = function () {
+            var elName = $(this).attr('name'),
+                temp = {},
+                k;
+            if (!InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].OrderingAnswers) {
+                InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].OrderingAnswers = {};
+            }
+            temp = InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].OrderingAnswers;
+            $('option[disabled]').attr('disabled', null);
+            if ($(this).val()) {
+                temp[elName] = $(this).val();
+            } else {
+                delete temp[elName];
+            }
+            for (k in temp) {
+                if (temp.hasOwnProperty(k)) {
+                    $('option[value=' + Number(temp[k]) + ']').attr('disabled', 'true');
+                }
+            }
+            InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].OrderingAnswers = temp;
+            if (Object.keys(temp).length === InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].answers.length) {
+                $('#ILQ_quizNextBtn').removeClass('ILQ_BaseButtonDisabled');
+                $('#ILQ_quizNextBtn').attr('role', 'button');
+                $('#ILQ_quizNextBtn').removeAttr('disabled');
+                $('#ILQ_quizNextBtn').fadeIn(500);
+                $('#ILQ_quizNextBtn .ILQ_AccessOnly').css('display', 'none');
+                $('#ILQ_quizNextBtn .ILQ_AccessOnly').attr('aria-hidden', 'true');
+                $('#ILQ_quizNextBtn')[0].onclick = InlineQuizApp.RequestNextQuestion;
+                $('#ILQ_quizNextBtn')[0].onmouseover = function () {
+                    $(this).addClass('over');
+                };
+                $('#ILQ_quizNextBtn')[0].onmouseout = function () {
+                    $(this).removeClass('over');
+                };
+                $('#ILQ_quizNextBtn')[0].onfocus = function () {
+                    $(this).addClass('over');
+                };
+                $('#ILQ_quizNextBtn')[0].onblur = function () {
+                    $(this).removeClass('over');
+                };
+                $('#ILQ_quizNextBtn')[0].onkeypress = function (e) {
+                    if (e.keyCode === 13 || e.keyCode === 32) {
+                        InlineQuizApp.RequestNextQuestion(e);
+                    }
+                };
+            } else {
+                $('#ILQ_quizNextBtn').addClass('ILQ_BaseButtonDisabled');
+                $('#ILQ_quizNextBtn').attr('role', 'disabled');
+                $('#ILQ_quizNextBtn').fadeOut(250);
+                $('#ILQ_quizNextBtn .ILQ_AccessOnly').css('display', 'inline');
+                $('#ILQ_quizNextBtn .ILQ_AccessOnly').attr('aria-hidden', 'false');
+                $('#ILQ_quizNextBtn')[0].onclick = undefined;
+                $('#ILQ_quizNextBtn')[0].onmouseover = undefined;
+                $('#ILQ_quizNextBtn')[0].onmouseout = undefined;
+                $('#ILQ_quizNextBtn')[0].onfocus = undefined;
+                $('#ILQ_quizNextBtn')[0].onblur = undefined;
+                $('#ILQ_quizNextBtn')[0].onkeypress = undefined;
+            }
+        };
     }
 }(jQuery, InlineQuizApp, CSVal, SMI, Smith));

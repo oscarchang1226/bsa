@@ -541,10 +541,16 @@ InlineQuizApp.GenerateMiniReport = function(questionIndex, includeQuestion) {
 
         cont += qCopy;
     } else if (InlineQuizApp.QuizData.Questions[questionIndex].questionType === 'Ordering') {
-        var temp;
-        for (i = 0; i < InlineQuizApp.QuizData.Questions[questionIndex].answers.length; i++) {
-            temp = InlineQuizApp.QuizData.Questions[questionIndex].answers[i];
-            cont += '<p><b>' + temp.key + '</b> ' + temp.answerText + '</p>'
+        var selects = $('.ILQ_AnswerSlot select'),
+            temp;
+        for (i = 0; i < selects.length; i++) {
+            temp = selects[i].name.replace('AnswerSlot_', '');
+            temp = temp.replace('_select', '');
+            temp = Number(temp);
+            if (!isNaN(temp)) {
+                temp = InlineQuizApp.QuizData.Questions[questionIndex].answers[temp];
+                cont += '<p><b>' + temp.key + '</b> ' + temp.answerText + '</p>';
+            }
         }
     } else {
         for (i = crta.length - 1; i >= 0; i--) {
@@ -1438,6 +1444,8 @@ InlineQuizApp.setQuestionSlide = function(data, options) {
     }
 
     if (data.questionType !== 'Fill In The Blank' && data.questionType !== 'Math') {
+        var answerSlots = [],
+            answerSlotIndex;
         for (i = 0; i < data.answers.length; i++) {
             var slot = document.createElement('div');
             slot.id = 'AnswerSlot_' + i;
@@ -1495,71 +1503,20 @@ InlineQuizApp.setQuestionSlide = function(data, options) {
             }else if (data.questionType === 'Ordering') {
                 impCont.setAttribute('class', 'ILQ_impCont ILQ_select');
                 var select = document.createElement('select'),
-                    temp = document.createElement('option');
-                    select.name = 'AnswerSlot_' + i + '_select';
+                    temp = document.createElement('option'),
+                    o;
+                select.name = 'AnswerSlot_' + i + '_select';
+                data.answers[i].inputName = select.name;
                 select.appendChild(temp);
-                for (var o = 1; o <= data.answers.length; o++) {
+                for (o = 1; o <= data.answers.length; o++) {
                     temp = document.createElement('option');
                     temp.appendChild(document.createTextNode(o));
                     temp.value = o;
                     select.appendChild(temp);
                 }
-                select.onchange = function() {
-                    var elName = $(this).attr('name'),
-                        temp = {};
-                    if (!InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].OrderingAnswers) {
-                        InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].OrderingAnswers = {};
-                    }
-                    temp = InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].OrderingAnswers;
-                    $('option[disabled]').attr('disabled', null);
-                    if ($(this).val()) {
-                        temp[elName] = $(this).val();
-                    } else {
-                        delete temp[elName];
-                    }
-                    for (var k in temp) {
-                        $('option[value=' + Number(temp[k]) + ']').attr('disabled', 'true');
-                    }
-                    InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].OrderingAnswers = temp;
-                    if (Object.keys(temp).length === InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].answers.length) {
-                        $('#ILQ_quizNextBtn').removeClass('ILQ_BaseButtonDisabled');
-                        $('#ILQ_quizNextBtn').attr('role', 'button');
-                        $('#ILQ_quizNextBtn').removeAttr('disabled');
-                        $('#ILQ_quizNextBtn').fadeIn(500);
-                        $('#ILQ_quizNextBtn .ILQ_AccessOnly').css('display', 'none');
-                        $('#ILQ_quizNextBtn .ILQ_AccessOnly').attr('aria-hidden', 'true');
-                        $('#ILQ_quizNextBtn')[0].onclick = InlineQuizApp.RequestNextQuestion;
-                        $('#ILQ_quizNextBtn')[0].onmouseover = function() {
-                            $(this).addClass('over');
-                        }
-                        $('#ILQ_quizNextBtn')[0].onmouseout = function() {
-                            $(this).removeClass('over');
-                        }
-                        $('#ILQ_quizNextBtn')[0].onfocus = function() {
-                            $(this).addClass('over');
-                        }
-                        $('#ILQ_quizNextBtn')[0].onblur = function() {
-                            $(this).removeClass('over');
-                        }
-                        $('#ILQ_quizNextBtn')[0].onkeypress = function(e) {
-                            if (e.keyCode === 13 || e.keyCode === 32) {
-                                InlineQuizApp.RequestNextQuestion(e);
-                            }
-                        }
-                    } else {
-                        $('#ILQ_quizNextBtn').addClass('ILQ_BaseButtonDisabled');
-                        $('#ILQ_quizNextBtn').attr('role', 'disabled');
-                        $('#ILQ_quizNextBtn').fadeOut(250);
-                        $('#ILQ_quizNextBtn .ILQ_AccessOnly').css('display', 'inline');
-                        $('#ILQ_quizNextBtn .ILQ_AccessOnly').attr('aria-hidden', 'false');
-                        $('#ILQ_quizNextBtn')[0].onclick = void 0;
-                        $('#ILQ_quizNextBtn')[0].onmouseover = void 0;
-                        $('#ILQ_quizNextBtn')[0].onmouseout = void 0;
-                        $('#ILQ_quizNextBtn')[0].onfocus = void 0;
-                        $('#ILQ_quizNextBtn')[0].onblur = void 0;
-                        $('#ILQ_quizNextBtn')[0].onkeypress = void 0;
-                    }
-                };
+                if (InlineQuizApp.onSelectChange !== void(0) && InlineQuizApp.onSelectChange.constructor === Function) {
+                    select.onchange = InlineQuizApp.onSelectChange;
+                }
                 impCont.appendChild(select);
             }
 
@@ -1572,7 +1529,15 @@ InlineQuizApp.setQuestionSlide = function(data, options) {
             $(label.firstChild).attr('aria-hidden', 'true');
             slot.appendChild(label);
 
-            ILQ_quizField.appendChild(slot);
+            answerSlots.push(slot);
+        }
+
+        answerSlots = answerSlots.sort(function () {
+            return 0.5 - Math.random();
+        });
+
+        for (answerSlotIndex = 0; answerSlotIndex < answerSlots.length; answerSlotIndex++) {
+            ILQ_quizField.appendChild(answerSlots[answerSlotIndex]);
         }
     }
 
