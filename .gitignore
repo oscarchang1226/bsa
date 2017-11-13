@@ -1,1 +1,4 @@
 *.min.*
+!iat/js/*.min.*
+!iat/css/*.min.*
+!iat/thirdpartylib/*.min.*
