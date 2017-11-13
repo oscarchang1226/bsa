@@ -5,14 +5,20 @@ JS File that provides utilities for Smith University
 **/
 /*jslint nomen: true*/
 /*jslint browser: true*/
-/*global jQuery, console*/
+/*global jQuery, console, Smith*/
 
 (function ($) {
     'use strict';
     window.Smith = {
         isDev: true,
-        // path: 'https://udev.smithbuy.com/api/',
-        path: 'http://localhost:4040/api/',
+        path: '',
+        init: function () {
+            if (this.isDev) {
+                this.path = 'http://localhost:4040/api/';
+            } else {
+                this.path = 'https://udev.smithbuy.com/api/';
+            }
+        },
         buildUrl: function (url) {
             return this.path + url;
         },
@@ -106,4 +112,9 @@ JS File that provides utilities for Smith University
             });
         }
     };
+
+    $(window).ready(function () {
+        Smith.init();
+    });
+
 }(jQuery));

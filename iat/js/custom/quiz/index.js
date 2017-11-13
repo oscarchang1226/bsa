@@ -10,7 +10,8 @@ IAT plugins
 
     if (c && !c.user) {
         try {
-            c.init();
+            // c.init();
+            c.user = {};
         } catch (e) {
             console.error(e);
         }
@@ -20,6 +21,7 @@ IAT plugins
         /**
          * Transform response data to quiz data
         **/
+        q.manipulateAttempts = false;
         q.attemptData = { questions: {} };
         q.transformApiQuizData = function (data) {
             var result = {
@@ -65,9 +67,12 @@ IAT plugins
                 result.General.preQuizText = "<p>Take a few minutes to self-test what you have just learned before the end of this course. At the end of each course, you'll take a Final Test that covers all the material in the course. You need a 100% to pass, so practicing now will help you succeed. This self-study quiz is NOT graded and feedback is given immediately to help you understand mistakes.</p>";
             } else if (data.assessment.name.toLowerCase().indexOf('test') > -1) {
                 result.General.preQuizText = "<p>This is your Final Test for this course. Please make sure that you have reviewed the material in the videos and in the written portions of the course. Please also make sure that you have done the review quiz to practice the types of questions you may encounter in this Final Test.<br />";
-                result.General.preQuizText += "<br />You will need to get a 100% score on this Test to pass and earn credit (and a badge) for completing the course. If you pass the Test in your first attempt, you will earn five (5) points and a badge. Each attempt after the first, will deducted one point from the possible five for passing. These points add up in the <strongSmith U Leaderboard</strong>, which is a company-wide leaderboard based on individuals and on offices.<br/>";
+                result.General.preQuizText += "<br />You will need to get a <b>100%</b> score on this Test to pass and earn credit (and a badge) for completing the course. If you pass the Test in your first attempt, you will earn five (5) points and a badge. Each attempt after the first, will deducted one point from the possible five for passing. These points add up in the <strongSmith U Leaderboard</strong>, which is a company-wide leaderboard based on individuals and on offices.<br/>";
                 result.General.preQuizText += "<br />After you have passed all of the Tests for all of the graded courses in a series, you will take the Final Exam for the entire series. The Final Exam for this series is TR109: Final Exam.<br />";
                 result.General.preQuizText += "<br />Good luck!</p>";
+                if (data.assessment.percentage_to_pass) {
+                    result.General.preQuizText = result.General.preQuizText.replace('100%', data.assessment.percentage_to_pass + '%');
+                }
                 delete result.General.repeatOnComplete;
             }
 
@@ -110,15 +115,11 @@ IAT plugins
                         scoreMax
                         quizData
             **/
-            // d.updateAttempt(v.currentContext.attempt_id, q.attemptData, function () {
-            //     console.log('update grade, issue award', v.currentContext.gi, v.currentContext.ai);
-            // });
             q.QuizData.General.postQuizText += '<p>You scored <strong>' + (data.scoreAchieved / data.scoreMax * 100).toFixed(2) + '%</strong> (' + data.scoreAchieved + ' out of ' + data.scoreMax + ').</p>';
         };
 
         q.onPostComplete = function () {
             q.updateTimer();
-            q.stopTimer();
         };
 
         q.onNextTopic = function () {
@@ -142,9 +143,16 @@ IAT plugins
         q.onCheckAnswer = function (data) {
             q.attemptData.questions[data.question.questionId] = {
                 score: data.qScore,
-                time: 30
+                time: q.getTimeInSeconds()
             };
-            console.log('archive question/answers');
+            if (q.currentQuestion === q.QuizData.General.showQuestions - 1) {
+                q.stopTimer();
+                if (q.manipulateAttempts) {
+                    d.updateAttempt(v.currentContext.attempt_id, q.attemptData, function () {
+                        console.log('update grade, issue award', v.currentContext.gi, v.currentContext.ai);
+                    });
+                }
+            }
         };
 
         q.onReady = function (data) {
@@ -160,27 +168,28 @@ IAT plugins
         };
 
         q.onStart = function () {
-            // d.storeAttempt({
-            //     taker_id: v.currentContext.ui,
-            //     taker_first: v.currentContext.taker_first,
-            //     taker_last: v.currentContext.taker_last,
-            //     module_id: v.currentContext.ou,
-            //     assessment_id: v.currentContext.assessmentId
-            // }, function (res) {
-            //     v.currentContext.attempt_id = res.responseJSON.id;
-            //     q.GoNextQuestion();
-            // });
+            if (q.manipulateAttempts) {
+                d.storeAttempt({
+                    taker_id: v.currentContext.ui,
+                    taker_first: v.currentContext.taker_first,
+                    taker_last: v.currentContext.taker_last,
+                    module_id: v.currentContext.ou,
+                    assessment_id: v.currentContext.assessmentId
+                }, function (res) {
+                    v.currentContext.attempt_id = res.responseJSON.id;
+                    q.GoNextQuestion();
+                });
+            }
             q.startTimer();
             q.GoNextQuestion();
         };
 
         q.getTimeInSeconds = function () {
-            // var currentTime = q.timer.m * 60 + q.timer.s;
+            var currentTime = q.timer.m * 60 + q.timer.s;
             Object.keys(q.attemptData.questions).reduce(function (acc, qId) {
-                console.log(q.attemptData.questions[qId]);
                 return acc + q.attemptData.questions[qId].time;
             }, 0);
-            return q.QuizData.General.timer - Object.keys(q.attemptData.questions).reduce(function (acc, qId) { return acc + q.attemptData.questions[qId].time; }, 0);
+            return q.QuizData.General.timer - currentTime - Object.keys(q.attemptData.questions).reduce(function (acc, qId) { return acc + q.attemptData.questions[qId].time; }, 0);
         };
 
         q.updateTimer = function (s) {
@@ -219,6 +228,8 @@ IAT plugins
                         // endQuiz();
                         // currentIndex = quizData.Questions.length-1;
                         q.currentQuestion = q.QuizData.General.showQuestions;
+                        q.QuizData.General.postQuizText = '<p>Time\'s up!</p>';
+                        q.stopTimer();
                         q.updateTimer('00:00');
                         q.goEndSlide();
                     } else {

@@ -540,6 +540,12 @@ InlineQuizApp.GenerateMiniReport = function(questionIndex, includeQuestion) {
         }
 
         cont += qCopy;
+    } else if (InlineQuizApp.QuizData.Questions[questionIndex].questionType === 'Ordering') {
+        var temp;
+        for (i = 0; i < InlineQuizApp.QuizData.Questions[questionIndex].answers.length; i++) {
+            temp = InlineQuizApp.QuizData.Questions[questionIndex].answers[i];
+            cont += '<p><b>' + temp.key + '</b> ' + temp.answerText + '</p>'
+        }
     } else {
         for (i = crta.length - 1; i >= 0; i--) {
             if (i === 0) {
@@ -614,7 +620,7 @@ InlineQuizApp.GenerateMiniReport = function(questionIndex, includeQuestion) {
         }
 
         cont += qCopy;
-    } else {
+    } else if (InlineQuizApp.QuizData.Questions[questionIndex].questionType === 'Multiple Choice' || InlineQuizApp.QuizData.Questions[questionIndex].questionType === 'All That Apply') {
         cont += '<p class="ILQ_miniReportHeader"><strong>You selected: </strong>';
 
         if (ca.length === 0) {
@@ -1328,6 +1334,10 @@ InlineQuizApp.setQuestionSlide = function(data, options) {
         case 'Math':
             ILQ_container.setAttribute('class', 'ma');
             break;
+
+        case 'Ordering':
+            ILQ_container.setAttribute('class', 'or');
+            break;
     }
 
     ILQ_container.setAttribute('class', ILQ_container.getAttribute('class') + ' ' + InlineQuizApp.QuizData.General.feedBackType);
@@ -1438,8 +1448,10 @@ InlineQuizApp.setQuestionSlide = function(data, options) {
 
             if (data.questionType === 'Multiple Choice') {
                 slot.setAttribute('role', 'radio');
-            } else {
+            } else if (data.questionType === 'All That Apply') {
                 slot.setAttribute('role', 'checkbox');
+            } else {
+                slot.setAttribute('role', 'select');
             }
 
             slot.setAttribute('aria-checked', 'false');
@@ -1480,6 +1492,75 @@ InlineQuizApp.setQuestionSlide = function(data, options) {
                 impCont.setAttribute('class', 'ILQ_impCont ILQ_radio');
             } else if (data.questionType === 'All That Apply') {
                 impCont.setAttribute('class', 'ILQ_impCont ILQ_check');
+            }else if (data.questionType === 'Ordering') {
+                impCont.setAttribute('class', 'ILQ_impCont ILQ_select');
+                var select = document.createElement('select'),
+                    temp = document.createElement('option');
+                    select.name = 'AnswerSlot_' + i + '_select';
+                select.appendChild(temp);
+                for (var o = 1; o <= data.answers.length; o++) {
+                    temp = document.createElement('option');
+                    temp.appendChild(document.createTextNode(o));
+                    temp.value = o;
+                    select.appendChild(temp);
+                }
+                select.onchange = function() {
+                    var elName = $(this).attr('name'),
+                        temp = {};
+                    if (!InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].OrderingAnswers) {
+                        InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].OrderingAnswers = {};
+                    }
+                    temp = InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].OrderingAnswers;
+                    $('option[disabled]').attr('disabled', null);
+                    if ($(this).val()) {
+                        temp[elName] = $(this).val();
+                    } else {
+                        delete temp[elName];
+                    }
+                    for (var k in temp) {
+                        $('option[value=' + Number(temp[k]) + ']').attr('disabled', 'true');
+                    }
+                    InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].OrderingAnswers = temp;
+                    if (Object.keys(temp).length === InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].answers.length) {
+                        $('#ILQ_quizNextBtn').removeClass('ILQ_BaseButtonDisabled');
+                        $('#ILQ_quizNextBtn').attr('role', 'button');
+                        $('#ILQ_quizNextBtn').removeAttr('disabled');
+                        $('#ILQ_quizNextBtn').fadeIn(500);
+                        $('#ILQ_quizNextBtn .ILQ_AccessOnly').css('display', 'none');
+                        $('#ILQ_quizNextBtn .ILQ_AccessOnly').attr('aria-hidden', 'true');
+                        $('#ILQ_quizNextBtn')[0].onclick = InlineQuizApp.RequestNextQuestion;
+                        $('#ILQ_quizNextBtn')[0].onmouseover = function() {
+                            $(this).addClass('over');
+                        }
+                        $('#ILQ_quizNextBtn')[0].onmouseout = function() {
+                            $(this).removeClass('over');
+                        }
+                        $('#ILQ_quizNextBtn')[0].onfocus = function() {
+                            $(this).addClass('over');
+                        }
+                        $('#ILQ_quizNextBtn')[0].onblur = function() {
+                            $(this).removeClass('over');
+                        }
+                        $('#ILQ_quizNextBtn')[0].onkeypress = function(e) {
+                            if (e.keyCode === 13 || e.keyCode === 32) {
+                                InlineQuizApp.RequestNextQuestion(e);
+                            }
+                        }
+                    } else {
+                        $('#ILQ_quizNextBtn').addClass('ILQ_BaseButtonDisabled');
+                        $('#ILQ_quizNextBtn').attr('role', 'disabled');
+                        $('#ILQ_quizNextBtn').fadeOut(250);
+                        $('#ILQ_quizNextBtn .ILQ_AccessOnly').css('display', 'inline');
+                        $('#ILQ_quizNextBtn .ILQ_AccessOnly').attr('aria-hidden', 'false');
+                        $('#ILQ_quizNextBtn')[0].onclick = void 0;
+                        $('#ILQ_quizNextBtn')[0].onmouseover = void 0;
+                        $('#ILQ_quizNextBtn')[0].onmouseout = void 0;
+                        $('#ILQ_quizNextBtn')[0].onfocus = void 0;
+                        $('#ILQ_quizNextBtn')[0].onblur = void 0;
+                        $('#ILQ_quizNextBtn')[0].onkeypress = void 0;
+                    }
+                };
+                impCont.appendChild(select);
             }
 
             slot.appendChild(impCont);
@@ -1898,6 +1979,21 @@ InlineQuizApp.getQuestionScore = function(questionIndex) {
         InlineQuizApp.inputScores.splice(questionIndex, 1, score);
 
         return score;
+    } else if (InlineQuizApp.QuizData.Questions[questionIndex].questionType === 'Ordering') {
+        oa = InlineQuizApp.QuizData.Questions[questionIndex].OrderingAnswers;
+        aa = InlineQuizApp.QuizData.Questions[questionIndex].answers;
+        correct = true;
+        for (var ai = 0; ai < aa.length; ai++) {
+            if (!oa || Number(oa['AnswerSlot_' + ai + '_select']) != aa[ai].key) {
+                correct = false;
+                break;
+            }
+        }
+        if (correct) {
+            return InlineQuizApp.QuizData.Questions[questionIndex].maxScoreValue;
+        } else {
+            return 0;
+        }
     } else {
         ca = InlineQuizApp.QuizData.Questions[questionIndex].ChosenAnswers;
         aa = InlineQuizApp.QuizData.Questions[questionIndex].answers;

@@ -207,6 +207,10 @@ body {
   -ms-transition: background-color 0.2s linear;
 }
 
+.ILQ_AnswerSlot {
+    padding: 10px 0;
+}
+
 .ILQ_AnswerSlot.over {
   background: #e6eaf0;
   transition: background-color 0.2s linear;
