@@ -2305,8 +2305,18 @@ InlineQuizApp.AssessFeedback = function() {
         ILQ_ContinuousResponseCont.appendChild(clearDiv);
     }
 
-    $(ILQ_ContinuousResponseCont).hide().appendTo(InlineQuizApp.contentRef).slideDown(500, 'swing');
+    // $(ILQ_ContinuousResponseCont).hide().appendTo(InlineQuizApp.contentRef).slideDown(500, 'swing');
     //InlineQuizApp.contentRef.appendChild(ILQ_ContinuousResponseCont);
+
+    $(ILQ_ContinuousResponseCont).hide().appendTo(InlineQuizApp.contentRef).slideDown({
+        duration: 500,
+        easing: 'swing',
+        complete: function () {
+            if (InlineQuizApp.postCheckAnswer && InlineQuizApp.postCheckAnswer.constructor === Function) {
+                InlineQuizApp.postCheckAnswer();
+            }            
+        }
+    });
 }
 
 /**

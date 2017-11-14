@@ -97,7 +97,13 @@
         },
         issueAward: function (cb, data) {
             var url = this.getUrls('issue_award');
-            return this.callAjax('POST', url, cb, data);
+            if (data && data.hasOwnProperty('AwardId')
+                    && data.hasOwnProperty('IssuedToUserId')
+                    && data.hasOwnProperty('Criteria')
+                    && data.hasOwnProperty('Evidence')) {
+                return this.callAjax('POST', url, cb, data);
+            }
+            console.error('Data needs the following property: AwardId, IssuedToUserId, Criteria, Evidence.');
         },
         getGrade: function (cb) {
             var url = this.getUrls('grade');
@@ -117,7 +123,7 @@
         },
         generateIssuedAwardCreate: function (c, e) {
             return {
-                AwardId: this.currentContext.ai,
+                AwardId: this.currentContext.awardId,
                 IssuedToUserId: this.currentContext.ui,
                 Criteria: c,
                 Evidence: e

@@ -207,7 +207,7 @@ body {
   -ms-transition: background-color 0.2s linear;
 }
 
-.ILQ_AnswerSlot {
+.ILQ_AnswerSlot[role="select"] {
     padding: 10px 0;
 }
 

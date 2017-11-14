@@ -4,8 +4,9 @@
       <meta http-equiv="X-UA-Compatible" content="IE=edge" >
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, user-scalable=no">
-      <title>My Quiz Activity</title>
+      <title>Smith University Assessment</title>
       <link href="css/bootstrap.min.css" rel="stylesheet">
+      <!-- <link rel="stylesheet" href="/shared/css/plugins/bootstrap.min.css"> -->
       <link href="css/quiz.min.css" rel="stylesheet">
       <link href="css/main.min.css" rel="stylesheet">
    </head>
@@ -25,19 +26,32 @@
         <script src="thirdpartylib/sha.js"></script>
         <script src="thirdpartylib/valence.js"></script>
 
-        <script src="js/custom/valence/valence-plugin.min.js"></script>
+        <script src="js/custom/valence/index.js"></script>
         <script src="js/custom/smithdev/index.js"></script>
 
         <script src="js/quiz.js"></script>
         <script src="js/custom/quiz/index.js"></script>
 
+        <!-- <script src="js/quiz.min.js"></script> -->
         <!-- <script src="js/custom/smithdev/smithdev.min.js"></script> -->
         <!-- <script src="js/custom/quiz/quiz-plugin.min.js"></script> -->
 
-
+        <!-- <script src="/shared/js/plugins/jquery.min.js"></script>
+        <script src="/shared/js/global-superagent-d2l-session-auth.min.js"></script>
+        <script src="/shared/js/csval-lib.min.js"></script>
+        <script src="/shared/js/sha.js"></script>
+        <script src="/shared/js/valence.js"></script>
+        <script src="/shared/third_party/valence-plugin.min.js"></script>
+        <script src="/shared/third_party/smithdev.min.js"></script>
+        <script src="/shared/third_party/quiz.min.js"></script>
+        <script src="/shared/third_party/quiz-plugin.min.js"></script> -->
         <script>
         	$(document).ready(function() {
-        		InlineQuizApp.setupQuizWithApi("dbox")
+                if (InlineQuizApp) {
+                    InlineQuizApp.setupQuizWithApi("dbox")
+                } else {
+                    console.warn('InlineQuizApp not defined!');
+                }
         	});
         </script>
         <noscript>This activity will only load in an online environment with JavaScript enabled.</noscript>

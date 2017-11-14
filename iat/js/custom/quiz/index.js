@@ -4,14 +4,14 @@ IAT plugins
 
 **/
 /*jslint browser:true*/
-/*global console, InlineQuizApp, CSVal, SMI, Smith, d2log, jQuery */
+/*global console, InlineQuizApp, CSVal, SMI, Smith, d2log, jQuery, alert */
 (function ($, q, c, v, d) {
     'use strict';
 
-    if (c && !c.user) {
+    if (c) {
         try {
-            // c.init();
-            c.user = {};
+            c.init();
+            // c.user = {};
         } catch (e) {
             console.error(e);
         }
@@ -74,35 +74,70 @@ IAT plugins
                     result.General.preQuizText = result.General.preQuizText.replace('100%', data.assessment.percentage_to_pass + '%');
                 }
                 delete result.General.repeatOnComplete;
+            } else if (data.assessment.name.toLowerCase().indexOf('exam') > -1) {
+                result.General.preQuizText = '<p>';
+                result.General.preQuizText = 'This is your Final Exam for this series. Please make sure that you have done the review quizzes to practice the types of questions you may encounter! You must have a <b>85%</b> to pass the Exam and earn the Certificate, but you can attempt it multiple times (with point deductions).';
+                result.General.preQuizText += '</p>';
+                if (data.assessment.percentage_to_pass) {
+                    result.General.preQuizText = result.General.preQuizText.replace('85%', data.assessment.percentage_to_pass + '%');
+                }
+                delete result.General.repeatOnComplete;
             }
 
             result.General.preQuizText += '<p>Press Start Activity to begin the assessment.</p>';
             return result;
         };
 
-        q.setupQuizWithApi = function (elId) {
-            var temp = location.search.replace('?', '').split('&'),
-                context = {},
-                vm = this;
-            temp.forEach(function (t) {
-                context[t.split('=')[0]] = t.split('=')[1];
-            });
-            if (CSVal && CSVal.user.Identifier) {
-                context.ui = CSVal.user.Identifier;
-                context.taker_first = CSVal.user.FirstName;
-                context.taker_last = CSVal.user.LastName;
-            } else {
-                context.ui = 221;
-                context.taker_first = 'Oscar';
-                context.taker_last = 'Chang';
+        q.setupQuizWithApi = function (elId, context) {
+            var temp = location.search.replace('?', '').split('&');
+            if (!context) {
+                context = {};
+                temp.forEach(function (t) {
+                    context[t.split('=')[0]] = t.split('=')[1];
+                });
             }
+            if (!context.hasOwnProperty('ou') || !context.hasOwnProperty('assessmentId')) {
+                d2log('ERROR: Missing Org Unit and Assessment Id');
+            } else {
+                if (c && c.user.Identifier) {
+                    context.ui = c.user.Identifier;
+                    context.taker_first = c.user.FirstName;
+                    context.taker_last = c.user.LastName;
+                    q.onSetup(elId, context);
+                } else {
+                    $.get(c.routes.get_whoami, function (data) {
+                        if (data.Identifier) {
+                            context.ui = data.Identifier;
+                            context.taker_first = data.FirstName;
+                            context.taker_last = data.LastName;
+                            q.onSetup(elId, context);
+                        } else {
+                            // alert('Can\'t retrieve user information.');
+                            context.ui = 221;
+                            context.taker_first = 'Oscar';
+                            context.taker_last = 'Chang';
+                            q.onSetup(elId, context);
+                        }
+                    }).fail(function () {
+                        // alert('Can\'t retrieve user information.');
+                        context.ui = 221;
+                        context.taker_first = 'Oscar';
+                        context.taker_last = 'Chang';
+                        q.onSetup(elId, context);
+                    });
+                }
+
+            }
+        };
+
+        q.onSetup = function (elId, context) {
             v.init(context);
             d.getAssessment(context.assessmentId, function (res) {
                 v.currentContext.assessmentId = res.responseJSON.assessment.id;
                 if (document.getElementById(elId) !== null) {
-                    vm.containerRef = document.getElementById(elId);
-                    vm.QuizData = vm.transformApiQuizData(res.responseJSON);
-                    vm.BuildQuiz(vm.QuizData);
+                    q.containerRef = document.getElementById(elId);
+                    q.QuizData = q.transformApiQuizData(res.responseJSON);
+                    q.BuildQuiz(q.QuizData);
                 } else {
                     d2log('ERROR: Missing specified DOM object in InlineQuizApp.setupQuizWithApi().');
                 }
@@ -123,10 +158,10 @@ IAT plugins
         };
 
         q.onNextTopic = function () {
-            if (parent && parent.document) {
-                var nextButton = parent.document.querySelector('a.d2l-iterator-button-next');
-                if (nextButton) {
-                    parent.document.querySelector('a.d2l-iterator-button-next').click();
+            if (parent && parent.parent && parent.parent.document) {
+                var nextButton = $('.d2l-page-header-side a.d2l-iterator-button-next', parent.parent.document);
+                if (nextButton && nextButton.length === 1) {
+                    nextButton[0].click();
                 } else {
                     console.warn('Cannot find next button');
                 }
@@ -152,6 +187,12 @@ IAT plugins
                         console.log('update grade, issue award', v.currentContext.gi, v.currentContext.ai);
                     });
                 }
+            }
+        };
+
+        q.postCheckAnswer = function () {
+            if (parent && $('#assessment-frame', parent.document)) {
+                $('#assessment-frame', parent.document).height($('body').height());
             }
         };
 
