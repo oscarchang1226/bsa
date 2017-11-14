@@ -27,6 +27,7 @@ IAT plugins
             var result = {
                 "General": {
                     "QuizName": (data.assessment.name || "Assessment") + '<span></span>',
+                    "CleanName": (data.assessment.name || "Assessment"),
                     "feedBackType": "continuous",
                     "forceCorrect": false,
                     "repeatOnComplete": true,
@@ -37,7 +38,8 @@ IAT plugins
                     "randomize": true,
                     "subtractWrong": true,
                     "postQuizText": 'You have completed this assessment.',
-                    "timer": data.assessment.timer_in_minutes
+                    "timer": data.assessment.timer_in_minutes,
+                    "percentage_to_pass": data.assessment.percentage_to_pass
                 },
                 'Questions': data.questions.map(function (q) {
                     // Correct any flaws
@@ -113,16 +115,16 @@ IAT plugins
                             q.onSetup(elId, context);
                         } else {
                             // alert('Can\'t retrieve user information.');
-                            context.ui = 221;
-                            context.taker_first = 'Oscar';
-                            context.taker_last = 'Chang';
+                            context.ui = 204;
+                            // context.taker_first = 'Oscar';
+                            // context.taker_last = 'Chang';
                             q.onSetup(elId, context);
                         }
                     }).fail(function () {
                         // alert('Can\'t retrieve user information.');
-                        context.ui = 221;
-                        context.taker_first = 'Oscar';
-                        context.taker_last = 'Chang';
+                        context.ui = 204;
+                        // context.taker_first = 'Oscar';
+                        // context.taker_last = 'Chang';
                         q.onSetup(elId, context);
                     });
                 }
@@ -131,16 +133,22 @@ IAT plugins
         };
 
         q.onSetup = function (elId, context) {
-            v.init(context);
-            d.getAssessment(context.assessmentId, function (res) {
-                v.currentContext.assessmentId = res.responseJSON.assessment.id;
-                if (document.getElementById(elId) !== null) {
-                    q.containerRef = document.getElementById(elId);
-                    q.QuizData = q.transformApiQuizData(res.responseJSON);
-                    q.BuildQuiz(q.QuizData);
-                } else {
-                    d2log('ERROR: Missing specified DOM object in InlineQuizApp.setupQuizWithApi().');
-                }
+            v.init(context, function (c) {
+                d.getAssessment(c.assessmentId, function (res) {
+                    v.currentContext.assessmentId = res.responseJSON.assessment.id;
+                    if (document.getElementById(elId) !== null) {
+                        q.containerRef = document.getElementById(elId);
+                        q.QuizData = q.transformApiQuizData(res.responseJSON);
+                        if (c.awardReceived) {
+                            q.QuizData.Questions = [];
+                            q.QuizData.General.preQuizText = '<p>Congratulations! You have passed ' + q.QuizData.General.CleanName + '.</p>';
+                            q.isDisabled = true;
+                        }
+                        q.BuildQuiz(q.QuizData);
+                    } else {
+                        d2log('ERROR: Missing specified DOM object in InlineQuizApp.setupQuizWithApi().');
+                    }
+                });
             });
         };
 
@@ -181,11 +189,25 @@ IAT plugins
                 time: q.getTimeInSeconds()
             };
             if (q.currentQuestion === q.QuizData.General.showQuestions - 1) {
+                var percentage = 0,
+                    temp;
+                if (q.GetMaxScore() > 0) {
+                    percentage = q.GetTotalScore() / q.GetMaxScore() * 100;
+                }
                 q.stopTimer();
                 if (q.manipulateAttempts) {
                     d.updateAttempt(v.currentContext.attempt_id, q.attemptData, function () {
                         console.log('update grade, issue award', v.currentContext.gi, v.currentContext.ai);
                     });
+                }
+                if (percentage >= q.QuizData.General.percentage_to_pass) {
+                    if (v.currentContext.awardId) {
+                        temp = v.generateIssuedAwardCreate(
+                            'Passed assessment (' + v.currentContext.assessmentId + ') ' + q.QuizData.General.CleanName,
+                            'Percentage: ' + percentage.toFixed(2) + '% for ' + q.QuizData.General.percentage_to_pass + '%'
+                        );
+                        v.issueAward(null, temp);
+                    }
                 }
             }
         };

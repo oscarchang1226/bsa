@@ -785,6 +785,10 @@ InlineQuizApp.MakeFullBaseButton = function(onOK, label, options) {
         options = {};
     }
 
+    if (InlineQuizApp.isDisabled) {
+        options.disabled = true;
+    }
+
     var ILQ_FullBaseButtonContainer = document.createElement('div');
 
     if (options.id) {
@@ -2314,7 +2318,7 @@ InlineQuizApp.AssessFeedback = function() {
         complete: function () {
             if (InlineQuizApp.postCheckAnswer && InlineQuizApp.postCheckAnswer.constructor === Function) {
                 InlineQuizApp.postCheckAnswer();
-            }            
+            }
         }
     });
 }

@@ -29,8 +29,30 @@
         BAVERSION: '1.0',
         LPVERSION: '1.18',
         currentContext: {},
-        init: function (currentContext) {
-            this.currentContext = currentContext;
+        init: function (currentContext, cb) {
+            var vm = this;
+            vm.currentContext = currentContext;
+            try {
+                if (vm.currentContext.ou && vm.currentContext.awardId) {
+                    vm.getUserAwards(function (res) {
+                        if (res.responseJSON.Objects && res.responseJSON.Objects.length > 0) {
+                            vm.currentContext.awardReceived = res.responseJSON.Objects.filter(function (obj) {
+                                return Number(obj.OrgUnitId) === Number(vm.currentContext.ou) &&
+                                    Number(obj.Award.AwardId) === Number(vm.currentContext.awardId);
+                            }).length > 0;
+                        }
+                        if (cb && cb.constructor === Function) {
+                            cb(vm.currentContext);
+                        }
+                    });
+                } else {
+                    if (cb && cb.constructor === Function) {
+                        cb(vm.currentContext);
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+            }
         },
         getUrls: function (name) {
             var urls = {
@@ -39,6 +61,7 @@
                 grade_stats: '/d2l/api/le/' + this.LEVERSION + '/' + this.currentContext.ou + '/grades/' + this.currentContext.gi + '/statistics',
                 associations: '/d2l/api/bas/' + this.BAVERSION + '/orgunits/' + this.currentContext.ou + '/associations/',
                 issue_award: '/d2l/api/bas/' + this.BAVERSION + '/orgunits/' + this.currentContext.ou + '/issued/',
+                user_awards: '/d2l/api/bas/' + this.BAVERSION + '/issued/users/' + this.currentContext.ui + '/',
                 who_am_i: '/d2l/api/lp/' + this.LPVERSION + '/users/whoami'
             };
             return urls[name];
@@ -104,6 +127,10 @@
                 return this.callAjax('POST', url, cb, data);
             }
             console.error('Data needs the following property: AwardId, IssuedToUserId, Criteria, Evidence.');
+        },
+        getUserAwards: function (cb) {
+            var url = this.getUrls('user_awards');
+            return this.callAjax('GET', url, cb);
         },
         getGrade: function (cb) {
             var url = this.getUrls('grade');

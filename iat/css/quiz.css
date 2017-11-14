@@ -393,8 +393,8 @@ body {
 
 .ILQ_BaseButtonDisabled,
 .ILQ_GenericButtonDisabled {
-  background: #7fb7df !important;
-  border: 1px solid #8ea9ca !important;
+  background: rgba(0,0,0, .4) !important;
+  border: 1px solid rgba(0,0,0,0) !important;
   color: #FFFFFF !important;
   cursor: default;
 }
