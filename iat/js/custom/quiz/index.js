@@ -98,13 +98,14 @@ IAT plugins
                     context[t.split('=')[0]] = t.split('=')[1];
                 });
             }
-            if (!context.hasOwnProperty('ou') || !context.hasOwnProperty('assessmentId')) {
+            if (!context.hasOwnProperty('assessmentId')) {
                 d2log('ERROR: Missing Org Unit and Assessment Id');
             } else {
                 if (c && c.user.Identifier) {
                     context.ui = c.user.Identifier;
                     context.taker_first = c.user.FirstName;
                     context.taker_last = c.user.LastName;
+                    context.ou = c.context.ouID;
                     q.onSetup(elId, context);
                 } else {
                     $.get(c.routes.get_whoami, function (data) {
@@ -112,23 +113,37 @@ IAT plugins
                             context.ui = data.Identifier;
                             context.taker_first = data.FirstName;
                             context.taker_last = data.LastName;
-                            q.onSetup(elId, context);
+                            try {
+                                context.ou = c.context.ouID;
+                            } catch (e) {
+                                context.ou = undefined;
+                            }
+                            if (context.ou) {
+                                q.onSetup(elId, context);
+                            } else {
+                                d2log('Unable to continue without OrgUnit.');
+                                alert('No Org Unit Id.');
+                            }
                         } else {
-                            // alert('Can\'t retrieve user information.');
-                            context.ui = 221;
-                            // context.taker_first = 'Oscar';
-                            // context.taker_last = 'Chang';
-                            q.onSetup(elId, context);
+                            q.onSetupPlanB(elId, context);
                         }
                     }).fail(function () {
-                        // alert('Can\'t retrieve user information.');
-                        context.ui = 221;
-                        // context.taker_first = 'Oscar';
-                        // context.taker_last = 'Chang';
-                        q.onSetup(elId, context);
+                        q.onSetupPlanB(elId, context);
                     });
                 }
 
+            }
+        };
+
+        q.onSetupPlanB = function (elId, context) {
+            if (!d.isDev) {
+                alert('Can\'t retrieve user information.');
+            } else {
+                context.ui = 213;
+                context.ou = 7143;
+                // context.taker_first = 'Oscar';
+                // context.taker_last = 'Chang';
+                q.onSetup(elId, context);
             }
         };
 
@@ -153,11 +168,6 @@ IAT plugins
         };
 
         q.onComplete = function (data) {
-            /**
-                data    scoreAchieved
-                        scoreMax
-                        quizData
-            **/
             q.QuizData.General.postQuizText += '<p>You scored <strong>' + (data.scoreAchieved / data.scoreMax * 100).toFixed(2) + '%</strong> (' + data.scoreAchieved + ' out of ' + data.scoreMax + ').</p>';
         };
 
@@ -195,18 +205,18 @@ IAT plugins
                     percentage = q.GetTotalScore() / q.GetMaxScore() * 100;
                 }
                 q.stopTimer();
-                if (v.currentContext.inClassList && q.manipulateAttempts) {
-                    d.updateAttempt(v.currentContext.attempt_id, q.attemptData, function () {
-                        console.log('update grade, issue award', v.currentContext.gi, v.currentContext.ai);
-                    });
-                }
-                if (percentage >= q.QuizData.General.percentage_to_pass) {
-                    if (v.currentContext.inClassList && v.currentContext.awardId) {
-                        temp = v.generateIssuedAwardCreate(
-                            'Passed assessment (' + v.currentContext.assessmentId + ') ' + q.QuizData.General.CleanName,
-                            'Percentage: ' + percentage.toFixed(2) + '% for ' + q.QuizData.General.percentage_to_pass + '%'
-                        );
-                        v.issueAward(null, temp);
+                if (v.currentContext.inClassList) {
+                    if (q.manipulateAttempts) {
+                        d.updateAttempt(v.currentContext.attempt_id, q.attemptData, null);
+                    }
+                    if (percentage >= q.QuizData.General.percentage_to_pass) {
+                        if (v.currentContext.awardId) {
+                            temp = v.generateIssuedAwardCreate(
+                                'Passed assessment (' + v.currentContext.assessmentId + ') ' + q.QuizData.General.CleanName,
+                                'Percentage: ' + percentage.toFixed(2) + '% for ' + q.QuizData.General.percentage_to_pass + '%'
+                            );
+                            v.issueAward(null, temp);
+                        }
                     }
                 }
             }
@@ -219,7 +229,6 @@ IAT plugins
         };
 
         q.onReady = function (data) {
-            // console.log(data.quizData.General.timer);
             if (data.quizData.General.timer) {
                 q.QuizData.General.timer = data.quizData.General.timer * 60;
                 q.timer = {
@@ -231,28 +240,34 @@ IAT plugins
         };
 
         q.onStart = function () {
-            if (q.manipulateAttempts) {
-                d.storeAttempt({
-                    taker_id: v.currentContext.ui,
-                    taker_first: v.currentContext.taker_first,
-                    taker_last: v.currentContext.taker_last,
-                    module_id: v.currentContext.ou,
-                    assessment_id: v.currentContext.assessmentId
-                }, function (res) {
-                    v.currentContext.attempt_id = res.responseJSON.id;
-                    q.GoNextQuestion();
-                });
+            if (v.currentContext.inClassList) {
+                if (q.manipulateAttempts) {
+                    return d.storeAttempt({
+                        taker_id: v.currentContext.ui,
+                        taker_first: v.currentContext.taker_first,
+                        taker_last: v.currentContext.taker_last,
+                        module_id: v.currentContext.ou,
+                        assessment_id: v.currentContext.assessmentId
+                    }, function (res) {
+                        v.currentContext.attempt_id = res.responseJSON.id;
+                        q.startTimer();
+                        q.GoNextQuestion();
+                    });
+                }
             }
             q.startTimer();
             q.GoNextQuestion();
         };
 
         q.getTimeInSeconds = function () {
-            var currentTime = q.timer.m * 60 + q.timer.s;
-            Object.keys(q.attemptData.questions).reduce(function (acc, qId) {
-                return acc + q.attemptData.questions[qId].time;
-            }, 0);
-            return q.QuizData.General.timer - currentTime - Object.keys(q.attemptData.questions).reduce(function (acc, qId) { return acc + q.attemptData.questions[qId].time; }, 0);
+            if (q.QuizData.General.timer) {
+                var currentTime = q.timer.m * 60 + q.timer.s;
+                Object.keys(q.attemptData.questions).reduce(function (acc, qId) {
+                    return acc + q.attemptData.questions[qId].time;
+                }, 0);
+                return q.QuizData.General.timer - currentTime - Object.keys(q.attemptData.questions).reduce(function (acc, qId) { return acc + q.attemptData.questions[qId].time; }, 0);
+            }
+            return 0;
         };
 
         q.updateTimer = function (s) {
@@ -306,7 +321,7 @@ IAT plugins
         };
 
         q.stopTimer = function () {
-            if (q.timer.interval) {
+            if (q.QuizData.General.timer && q.timer.interval) {
                 clearInterval(q.timer.interval);
             }
         };

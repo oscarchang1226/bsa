@@ -33,7 +33,14 @@
             var vm = this;
             vm.currentContext = currentContext;
             try {
-                if (vm.currentContext.ou && vm.currentContext.awardId) {
+                if (vm.currentContext.ou) {
+                    vm.getClassList(function (res) {
+                        vm.currentContext.inClassList = res.responseJSON.filter(function (obj) {
+                            return Number(obj.Identifier) === Number(vm.currentContext.ui);
+                        }).length > 0;
+                    });
+                }
+                if (vm.currentContext.awardId) {
                     vm.getUserAwards(function (res) {
                         if (res.responseJSON.Objects && res.responseJSON.Objects.length > 0) {
                             vm.currentContext.awardReceived = res.responseJSON.Objects.filter(function (obj) {
@@ -44,11 +51,6 @@
                         if (cb && cb.constructor === Function) {
                             cb(vm.currentContext);
                         }
-                    });
-                    vm.getClassList(function (res) {
-                        vm.currentContext.inClassList = res.responseJSON.filter(function (obj) {
-                            return Number(obj.Identifier) === Number(vm.currentContext.ui);
-                        }).length > 0;
                     });
                 } else {
                     if (cb && cb.constructor === Function) {
