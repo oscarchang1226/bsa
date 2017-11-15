@@ -45,6 +45,11 @@
                             cb(vm.currentContext);
                         }
                     });
+                    vm.getClassList(function (res) {
+                        vm.currentContext.inClassList = res.responseJSON.filter(function (obj) {
+                            return Number(obj.Identifier) === Number(vm.currentContext.ui);
+                        }).length > 0;
+                    });
                 } else {
                     if (cb && cb.constructor === Function) {
                         cb(vm.currentContext);
@@ -62,6 +67,7 @@
                 associations: '/d2l/api/bas/' + this.BAVERSION + '/orgunits/' + this.currentContext.ou + '/associations/',
                 issue_award: '/d2l/api/bas/' + this.BAVERSION + '/orgunits/' + this.currentContext.ou + '/issued/',
                 user_awards: '/d2l/api/bas/' + this.BAVERSION + '/issued/users/' + this.currentContext.ui + '/',
+                class_list: '/d2l/api/le/' + this.LEVERSION + '/' + this.currentContext.ou + '/classlist/',
                 who_am_i: '/d2l/api/lp/' + this.LPVERSION + '/users/whoami'
             };
             return urls[name];
@@ -142,6 +148,10 @@
         },
         getUserGrade: function (cb) {
             var url = this.getUrls('user_grade');
+            return this.callAjax('GET', url, cb);
+        },
+        getClassList: function (cb) {
+            var url = this.getUrls('class_list');
             return this.callAjax('GET', url, cb);
         },
         putUserGrade: function (cb, data) {

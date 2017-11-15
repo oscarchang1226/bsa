@@ -115,14 +115,14 @@ IAT plugins
                             q.onSetup(elId, context);
                         } else {
                             // alert('Can\'t retrieve user information.');
-                            context.ui = 204;
+                            context.ui = 221;
                             // context.taker_first = 'Oscar';
                             // context.taker_last = 'Chang';
                             q.onSetup(elId, context);
                         }
                     }).fail(function () {
                         // alert('Can\'t retrieve user information.');
-                        context.ui = 204;
+                        context.ui = 221;
                         // context.taker_first = 'Oscar';
                         // context.taker_last = 'Chang';
                         q.onSetup(elId, context);
@@ -195,13 +195,13 @@ IAT plugins
                     percentage = q.GetTotalScore() / q.GetMaxScore() * 100;
                 }
                 q.stopTimer();
-                if (q.manipulateAttempts) {
+                if (v.currentContext.inClassList && q.manipulateAttempts) {
                     d.updateAttempt(v.currentContext.attempt_id, q.attemptData, function () {
                         console.log('update grade, issue award', v.currentContext.gi, v.currentContext.ai);
                     });
                 }
                 if (percentage >= q.QuizData.General.percentage_to_pass) {
-                    if (v.currentContext.awardId) {
+                    if (v.currentContext.inClassList && v.currentContext.awardId) {
                         temp = v.generateIssuedAwardCreate(
                             'Passed assessment (' + v.currentContext.assessmentId + ') ' + q.QuizData.General.CleanName,
                             'Percentage: ' + percentage.toFixed(2) + '% for ' + q.QuizData.General.percentage_to_pass + '%'
