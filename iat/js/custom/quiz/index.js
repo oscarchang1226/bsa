@@ -21,7 +21,7 @@ IAT plugins
         /**
          * Transform response data to quiz data
         **/
-        q.manipulateAttempts = false;
+        q.manipulateAttempts = true;
         q.attemptData = { questions: {} };
         q.transformApiQuizData = function (data) {
             var result = {
@@ -138,13 +138,13 @@ IAT plugins
         q.onSetupPlanB = function (elId, context) {
             if (!d.isDev) {
                 alert('Can\'t retrieve user information.');
-            } else {
-                context.ui = 213;
-                context.ou = 7143;
-                // context.taker_first = 'Oscar';
-                // context.taker_last = 'Chang';
-                q.onSetup(elId, context);
             }
+            console.log('Unable to build quiz with', context, elId);
+            // context.ui = 204;
+            // context.ou = 7143;
+            // context.taker_first = 'Oscar';
+            // context.taker_last = 'Chang';
+            // q.onSetup(elId, context);
         };
 
         q.onSetup = function (elId, context) {
@@ -199,24 +199,28 @@ IAT plugins
                 time: q.getTimeInSeconds()
             };
             if (q.currentQuestion === q.QuizData.General.showQuestions - 1) {
-                var percentage = 0,
-                    temp;
-                if (q.GetMaxScore() > 0) {
-                    percentage = q.GetTotalScore() / q.GetMaxScore() * 100;
+                q.storeAssessmentData();
+            }
+        };
+
+        q.storeAssessmentData = function () {
+            var percentage = 0,
+                temp;
+            if (q.GetMaxScore() > 0) {
+                percentage = q.GetTotalScore() / q.GetMaxScore() * 100;
+            }
+            q.stopTimer();
+            if (v.currentContext.inClassList) {
+                if (q.manipulateAttempts) {
+                    d.updateAttempt(v.currentContext.attempt_id, q.attemptData, null);
                 }
-                q.stopTimer();
-                if (v.currentContext.inClassList) {
-                    if (q.manipulateAttempts) {
-                        d.updateAttempt(v.currentContext.attempt_id, q.attemptData, null);
-                    }
-                    if (percentage >= q.QuizData.General.percentage_to_pass) {
-                        if (v.currentContext.awardId) {
-                            temp = v.generateIssuedAwardCreate(
-                                'Passed assessment (' + v.currentContext.assessmentId + ') ' + q.QuizData.General.CleanName,
-                                'Percentage: ' + percentage.toFixed(2) + '% for ' + q.QuizData.General.percentage_to_pass + '%'
-                            );
-                            v.issueAward(null, temp);
-                        }
+                if (percentage >= q.QuizData.General.percentage_to_pass) {
+                    if (v.currentContext.awardId) {
+                        temp = v.generateIssuedAwardCreate(
+                            'Passed assessment (' + v.currentContext.assessmentId + ') ' + q.QuizData.General.CleanName,
+                            'Percentage: ' + percentage.toFixed(2) + '% for ' + q.QuizData.General.percentage_to_pass + '%'
+                        );
+                        v.issueAward(null, temp);
                     }
                 }
             }
@@ -303,11 +307,14 @@ IAT plugins
             if (q.QuizData.General.timer && !q.timer.interval) {
                 q.timer.interval = setInterval(function () {
                     if (q.timer.s === 0 && q.timer.m === 0) {
-                        // endQuiz();
-                        // currentIndex = quizData.Questions.length-1;
+                        q.attemptData.questions[q.QuizData.Questions[q.currentQuestion].questionId] = {
+                            score: 0,
+                            time: q.getTimeInSeconds()
+                        };
                         q.currentQuestion = q.QuizData.General.showQuestions;
                         q.QuizData.General.postQuizText = '<p>Time\'s up!</p>';
                         q.stopTimer();
+                        q.storeAssessmentData();
                         q.updateTimer('00:00');
                         q.goEndSlide();
                     } else {
