@@ -61,12 +61,12 @@
                 console.error(e);
             }
         },
-        getUrls: function (name) {
+        getUrls: function (name, ou) {
             var urls = {
                 user_grade: '/d2l/api/le/' + this.LEVERSION + '/' + this.currentContext.ou + '/grades/' + this.currentContext.gi + '/values/' + this.currentContext.ui,
                 grade: '/d2l/api/le/' + this.LEVERSION + '/' + this.currentContext.ou + '/grades/' + this.currentContext.gi,
                 grade_stats: '/d2l/api/le/' + this.LEVERSION + '/' + this.currentContext.ou + '/grades/' + this.currentContext.gi + '/statistics',
-                associations: '/d2l/api/bas/' + this.BAVERSION + '/orgunits/' + this.currentContext.ou + '/associations/',
+                associations: '/d2l/api/bas/' + this.BAVERSION + '/orgunits/' + (ou || this.currentContext.ou) + '/associations/',
                 issue_award: '/d2l/api/bas/' + this.BAVERSION + '/orgunits/' + this.currentContext.ou + '/issued/',
                 user_awards: '/d2l/api/bas/' + this.BAVERSION + '/issued/users/' + this.currentContext.ui + '/',
                 class_list: '/d2l/api/le/' + this.LEVERSION + '/' + this.currentContext.ou + '/classlist/',
@@ -122,8 +122,8 @@
             };
             return this.preCall(preCallback);
         },
-        getAssociations: function (cb) {
-            var url = this.getUrls('associations');
+        getAssociations: function (cb, ou) {
+            var url = this.getUrls('associations', ou);
             return this.callAjax('GET', url, cb);
         },
         issueAward: function (cb, data) {
@@ -135,6 +135,14 @@
                 return this.callAjax('POST', url, cb, data);
             }
             console.error('Data needs the following property: AwardId, IssuedToUserId, Criteria, Evidence.');
+        },
+        associateAward: function (cb, data, ou) {
+            var url = this.getUrls('associations', ou);
+            return this.callAjax('POST', url, cb, data);
+        },
+        deleteAssociation: function (cb, associationId, ou) {
+            var url = this.getUrls('associations', ou) + associationId;
+            return this.callAjax('DELETE', url, cb);
         },
         getUserAwards: function (cb) {
             var url = this.getUrls('user_awards');
@@ -182,9 +190,41 @@
                 }
             };
         },
+        generateAssociationCreate: function (awardId, credit, hidden) {
+            return {
+                AwardId: awardId,
+                Credit: credit,
+                HiddenAward: hidden || false
+            };
+        },
         whoAmI: function (cb) {
             var url = this.getUrls('who_am_i');
             return this.callAjax('GET', url, cb);
+        },
+        bulkAssociateAward: function (cb, ouList, awardList) {
+            if ((!ouList || !awardList) && (ouList.length === awardList.length)) {
+                console.error('Org Unit List and Award List must be an array and the same length.');
+                return;
+            }
+            var vm = this,
+                awardId,
+                temp;
+            ouList.forEach(function (ou, idx) {
+                vm.getAssociations(function (res) {
+                    awardId = awardList[idx];
+                    temp = res.responseJSON.Objects.filter(function (asso) {
+                        return Number(asso.Award.AwardId) === Number(awardId);
+                    });
+                    if (temp.length === 0) {
+                        vm.associateAward(null, vm.generateAssociationCreate(awardId, 1), ou);
+                    } else {
+                        console.log('Award Found in ' + ou, temp[0]);
+                    }
+                }, ou);
+            });
+            if (cb && cb.constructor === Function) {
+                cb();
+            }
         }
     };
 }(jQuery));
