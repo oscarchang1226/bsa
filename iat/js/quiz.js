@@ -1898,8 +1898,14 @@ InlineQuizApp.getQuestionScore = function(questionIndex) {
         altAnswered = false;
 
         for (i = 0; i < InlineQuizApp.QuizData.Questions[questionIndex].answers.length; i++) {
+            inputAnswer = (InlineQuizApp.savedText[questionIndex][i]||'').toLowerCase().replace(/ /g, '');
+            theAnswer = InlineQuizApp.QuizData.Questions[questionIndex].answers[i].answerText.toLowerCase().replace(/ /g, '');
+            condition = inputAnswer === theAnswer;
+            if (!condition && StringSimilarity && InlineQuizApp.QuizData.Questions[questionIndex].questionType === 'Fill In The Blank') {
+                condition = StringSimilarity.compareTwoStrings(inputAnswer, theAnswer) >= 0.9;
+            }
             // If the user answer was the same as the correct answer
-            if (InlineQuizApp.QuizData.Questions[questionIndex].answers[i].answerText.toLowerCase() === (InlineQuizApp.savedText[questionIndex][i]||'').toLowerCase()) {
+            if (condition) {
                 // Add the designated score value to the total question score
                 score += InlineQuizApp.QuizData.Questions[questionIndex].answers[i].scoreValue;
             }
@@ -1908,12 +1914,18 @@ InlineQuizApp.getQuestionScore = function(questionIndex) {
                 // If the question has alternate answers
                 if (InlineQuizApp.QuizData.Questions[questionIndex].answers[i].altAnswers) {
                     for (j = 0; j < InlineQuizApp.QuizData.Questions[questionIndex].answers[i].altAnswers.length; j++) {
+                        theAnswer = InlineQuizApp.QuizData.Questions[questionIndex].answers[i].altAnswers[j].answerText.toLowerCase().replace(/ /g, '');
+                        condition = inputAnswer === theAnswer;
+                        if (!condition && StringSimilarity && InlineQuizApp.QuizData.Questions[questionIndex].questionType === 'Fill In The Blank') {
+                            condition = StringSimilarity.compareTwoStrings(inputAnswer, theAnswer) >= 0.9;
+                        }
                         // If the user answer is the same as an alternate answer
-                        if (InlineQuizApp.QuizData.Questions[questionIndex].answers[i].altAnswers[j].answerText.toLowerCase() === (InlineQuizApp.savedText[questionIndex][i]||'').toLowerCase()) {
+                        if (condition) {
                             // Add the designated score value to the total question score
                             score += InlineQuizApp.QuizData.Questions[questionIndex].answers[i].altAnswers[j].scoreValue;
                             // Indicates that the question was answered with an alternate answer
                             altAnswered = true;
+                            break;
                         }
                     }
 
@@ -1922,7 +1934,7 @@ InlineQuizApp.getQuestionScore = function(questionIndex) {
                         // If wrong answers should subtract from the total question score
                         if (InlineQuizApp.QuizData.General.subtractWrong === true) {
                             // Score descreased by one
-                            score--;
+                            // score--;
                         }
                     }
                 }
