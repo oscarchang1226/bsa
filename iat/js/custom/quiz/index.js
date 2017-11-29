@@ -246,6 +246,10 @@ IAT plugins
                     s: q.QuizData.General.timer % 60
                 };
                 q.updateTimer();
+            } else {
+                q.timer = {
+                    s: 0
+                };
             }
         };
 
@@ -276,6 +280,10 @@ IAT plugins
                     return acc + q.attemptData.questions[qId].time;
                 }, 0);
                 return q.QuizData.General.timer - currentTime - Object.keys(q.attemptData.questions).reduce(function (acc, qId) { return acc + q.attemptData.questions[qId].time; }, 0);
+            } else if (q.timer.interval) {
+                var temp = q.timer.s;
+                q.timer.s = 0;
+                return temp;
             }
             return 0;
         };
@@ -330,11 +338,18 @@ IAT plugins
                 },
                     1000
                     );
+            } else {
+                q.timer.s = 0;
+                q.timer.interval = setInterval(function () {
+                    q.timer.s += 1;
+                }, 1000);
             }
         };
 
         q.stopTimer = function () {
             if (q.QuizData.General.timer && q.timer.interval) {
+                clearInterval(q.timer.interval);
+            } else if (q.timer.interval) {
                 clearInterval(q.timer.interval);
             }
         };
