@@ -58,6 +58,12 @@ IAT plugins
                     q.answers = q.answers.map(function (a) {
                         if (a.scoreValue) {
                             a.scoreValue = Number((q.maxScoreValue / correctAnswers.length).toFixed(2));
+                            if (a.altAnswers) {
+                                a.altAnswers = a.altAnswers.map(function (alt) {
+                                    alt.scoreValue = a.scoreValue;
+                                    return alt;
+                                });
+                            }
                         }
                         return a;
                     });
