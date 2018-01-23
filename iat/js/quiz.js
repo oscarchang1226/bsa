@@ -1046,6 +1046,7 @@ InlineQuizApp.MakeGenericButton = function(onOK, label, options) {
 
     var ILQ_GenericLabel = document.createElement('span');
     ILQ_GenericLabel.setAttribute('class', 'ILQ_GenericLabel');
+    ILQ_GenericLabel.setAttribute('data-label', label);
     ILQ_GenericLabel.innerHTML = '<span class=\'ILQ_AccessOnly\'>Disabled button: </span>' + label;
 
     if (!options.disabled) {
@@ -2130,6 +2131,13 @@ InlineQuizApp.AssessFeedback = function() {
     qScore = InlineQuizApp.getQuestionScore()
     maxScore = InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].maxScoreValue;
 
+    /**
+        Generic Button Options
+    */
+    var buttonOptions = {
+        id: 'ILQ_NextButton'
+    };
+
     if (!InlineQuizApp.QuizData.General.allowPartial && qScore < maxScore) {
         qScore = 0;
     }
@@ -2139,7 +2147,7 @@ InlineQuizApp.AssessFeedback = function() {
             InlineQuizApp.onCheckAnswer({
                 question: InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion],
                 qScore: qScore
-            })
+            });
         } catch (err) {
            d2log('onCheckAnswer Error!');
            d2log(err);
@@ -2210,9 +2218,7 @@ InlineQuizApp.AssessFeedback = function() {
 
                     InlineQuizApp.GoNextQuestion();
                 }
-            }, btnTxt, {
-                id: 'ILQ_NextButton'
-            });
+            }, btnTxt, buttonOptions);
 
             ILQ_ContinuousResponseCont.appendChild(nextBtn);
         }
@@ -2276,6 +2282,7 @@ InlineQuizApp.AssessFeedback = function() {
             if (InlineQuizApp.QuizData.General.postQuizText === 'none' && InlineQuizApp.QuizData.General.postQuizMedia === 'none' && InlineQuizApp.QuizData.General.repeatOnComplete === true) {
                 btnTxt = 'Reset Activity';
             } else {
+                buttonOptions.disabled = true;
                 btnTxt = 'Finish Activity';
             }
         }
@@ -2312,7 +2319,7 @@ InlineQuizApp.AssessFeedback = function() {
                     InlineQuizApp.GoNextQuestion();
                 }
             },
-            btnTxt, { id: 'ILQ_NextButton' });
+            btnTxt, buttonOptions);
 
         ILQ_ContinuousResponseCont.appendChild(nextBtn);
 

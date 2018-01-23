@@ -11,7 +11,7 @@ IAT plugins
     if (c) {
         try {
             c.init();
-            // c.user = {};
+            c.user = {};
         } catch (e) {
             console.error(e);
         }
@@ -72,7 +72,7 @@ IAT plugins
                 })
             };
             if (data.assessment.name.toLowerCase().indexOf('quiz') > -1) {
-                result.General.preQuizText = "<p>Take a few minutes to self-test what you have just learned before the end of this course. At the end of each course, you'll take a Final Test that covers all the material in the course. You need a 100% to pass, so practicing now will help you succeed. This self-study quiz is NOT graded and feedback is given immediately to help you understand mistakes.</p>";
+                result.General.preQuizText = "<p>Take a few minutes to self-test what you have just learned before the end of this course. At the end of each course, you'll take a Final Test that covers all the material in the course. You need a 90% to pass, so practicing now will help you succeed. This self-study quiz is NOT graded and feedback is given immediately to help you understand mistakes.</p>";
             } else if (data.assessment.name.toLowerCase().indexOf('test') > -1) {
                 result.General.preQuizText = "<p>This is your Final Test for this course. Please make sure that you have reviewed the material in the videos and in the written portions of the course. Please also make sure that you have done the review quiz to practice the types of questions you may encounter in this Final Test.<br />";
                 result.General.preQuizText += "<br />You will need to get a <b>100%</b> score on this Test to pass and earn credit (and a badge) for completing the course. If you pass the Test in your first attempt, you will earn five (5) points and a badge. Each attempt after the first, will deducted one point from the possible five for passing. These points add up in the <strongSmith U Leaderboard</strong>, which is a company-wide leaderboard based on individuals and on offices.<br/>";
@@ -175,6 +175,15 @@ IAT plugins
 
         q.onComplete = function (data) {
             q.QuizData.General.postQuizText += '<p>You scored <strong>' + (data.scoreAchieved / data.scoreMax * 100).toFixed(2) + '%</strong> (' + data.scoreAchieved + ' out of ' + data.scoreMax + ').</p>';
+            if (q.reviews && Object.keys(q.reviews).length > 0) {
+                q.QuizData.General.postQuizText += '<p><h4>Please review these topics: </h4><ul>';
+                Object.keys(q.reviews).forEach(function (key) {
+                    q.reviews[key].forEach(function (link) {
+                        q.QuizData.General.postQuizText += '<li><a href="' + link.url + '" target="_blank">' + link.label + '</a></li>';
+                    });
+                });
+                q.QuizData.General.postQuizText += '</ul></p>';
+            }
         };
 
         q.onPostComplete = function () {
@@ -204,9 +213,13 @@ IAT plugins
                 score: data.qScore,
                 time: q.getTimeInSeconds()
             };
-            if (q.currentQuestion === q.QuizData.General.showQuestions - 1) {
-                q.storeAssessmentData();
+        };
+
+        q.updateAttemptCallback = function (data) {
+            if (data.responseJSON.reviews) {
+                q.reviews = data.responseJSON.reviews;
             }
+            q.enableAccessFeedbackButton();
         };
 
         q.storeAssessmentData = function () {
@@ -218,7 +231,7 @@ IAT plugins
             q.stopTimer();
             if (v.currentContext.inClassList) {
                 if (q.manipulateAttempts) {
-                    d.updateAttempt(v.currentContext.attempt_id, q.attemptData, null);
+                    d.updateAttempt(v.currentContext.attempt_id, q.attemptData, q.updateAttemptCallback);
                 }
                 if (percentage >= q.QuizData.General.percentage_to_pass) {
                     if (v.currentContext.awardId) {
@@ -235,6 +248,10 @@ IAT plugins
         q.postCheckAnswer = function () {
             if (parent && $('#assessment-frame', parent.document)) {
                 $('#assessment-frame', parent.document).height($('body').height());
+            }
+
+            if (q.currentQuestion === q.QuizData.General.showQuestions - 1) {
+                q.storeAssessmentData();
             }
         };
 
@@ -254,6 +271,7 @@ IAT plugins
         };
 
         q.onStart = function () {
+            delete q.reviews;
             if (v.currentContext.inClassList) {
                 if (q.manipulateAttempts) {
                     return d.storeAttempt({
@@ -274,14 +292,17 @@ IAT plugins
         };
 
         q.getTimeInSeconds = function () {
+            var currentTime,
+                temp;
             if (q.QuizData.General.timer) {
-                var currentTime = q.timer.m * 60 + q.timer.s;
+                currentTime = q.timer.m * 60 + q.timer.s;
                 Object.keys(q.attemptData.questions).reduce(function (acc, qId) {
                     return acc + q.attemptData.questions[qId].time;
                 }, 0);
                 return q.QuizData.General.timer - currentTime - Object.keys(q.attemptData.questions).reduce(function (acc, qId) { return acc + q.attemptData.questions[qId].time; }, 0);
-            } else if (q.timer.interval) {
-                var temp = q.timer.s;
+            }
+            if (q.timer.interval) {
+                temp = q.timer.s;
                 q.timer.s = 0;
                 return temp;
             }
@@ -352,6 +373,66 @@ IAT plugins
             } else if (q.timer.interval) {
                 clearInterval(q.timer.interval);
             }
+        };
+
+        q.accessFeedbackButtonOnOK = function () {
+            var btnTxt = $('ILQ_GenericLabel').attr('data-label'),
+                i;
+            if (btnTxt === 'Reset Activity') {
+                if (q.QuizData.General.randomize) {
+                    q.QuizData.Questions = q.shuffle(q.QuizData.Questions);
+                }
+
+                q.currentQuestion = 0;
+                q.currentQuestionID = q.QuizData.Questions[q.currentQuestion].QuestionID;
+
+                // Resets the chosen answers for all types of questions, so they can't be used to repopulate fields on restart
+                for (i = q.QuizData.Questions.length - 1; q >= 0; q -= 1) {
+                    q.QuizData.Questions[i].QuestionID = i;
+                    q.QuizData.Questions[i].ChosenAnswers = [];
+                }
+
+                q.savedText = [];
+
+                for (i = 0; i < q.QuizData.Questions.length; i += 1) {
+                    q.savedText.push(0);
+                }
+
+                q.GoNextQuestion();
+            } else {
+                q.currentQuestion += 1;
+
+                if (q.currentQuestion < q.QuizData.General.showQuestions) {
+                    q.currentQuestionID = q.QuizData.Questions[q.currentQuestion].QuestionID;
+                }
+
+                q.GoNextQuestion();
+            }
+        };
+
+        q.enableAccessFeedbackButton = function () {
+            var buttonContainer = $('.ILQ_GenericButtonContainer.Generic');
+            buttonContainer.removeClass('ILQ_GenericButtonDisabled');
+
+            buttonContainer.on('mouseover focus', function () {
+                $(this).addClass('over');
+            });
+
+            buttonContainer.on('mouseout blur', function () {
+                $(this).removeClass('over');
+            });
+
+            buttonContainer.on('mousedown', function () {
+                $(this).addClass('active');
+            });
+
+            buttonContainer.on('keydown', function (e) {
+                if (e.keyCode === 13 || e.keyCode === 32) {
+                    q.accessFeedbackButtonOnOK(e);
+                }
+            });
+
+            buttonContainer.on('click', q.accessFeedbackButtonOnOK);
         };
 
         q.onSelectChange = function () {
