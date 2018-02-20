@@ -1956,6 +1956,8 @@ InlineQuizApp.getQuestionScore = function(questionIndex) {
             if ((InlineQuizApp.QuizData.Questions[questionIndex].maxScoreValue - score) < 0.05) {
                 score = InlineQuizApp.QuizData.Questions[questionIndex].maxScoreValue;
             }
+        } else if (score > InlineQuizApp.QuizData.Questions[questionIndex].maxScoreValue) {
+            score = InlineQuizApp.QuizData.Questions[questionIndex].maxScoreValue;
         }
 
         InlineQuizApp.inputScores.splice(questionIndex, 1, score);
@@ -2002,6 +2004,8 @@ InlineQuizApp.getQuestionScore = function(questionIndex) {
             if ((InlineQuizApp.QuizData.Questions[questionIndex].maxScoreValue - score) < 0.05) {
                 score = InlineQuizApp.QuizData.Questions[questionIndex].maxScoreValue;
             }
+        } else if (score > InlineQuizApp.QuizData.Questions[questionIndex].maxScoreValue) {
+            score = InlineQuizApp.QuizData.Questions[questionIndex].maxScoreValue;
         }
 
         return score;
