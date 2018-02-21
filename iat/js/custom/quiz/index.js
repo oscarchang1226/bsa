@@ -23,6 +23,8 @@ IAT plugins
         **/
         q.manipulateAttempts = true;
         q.attemptData = { questions: {} };
+        q.waitFinishButtonText = 'Please wait as we generate your result...';
+        q.finishButtonText = 'Finish Activity';
         q.transformApiQuizData = function (data) {
             var result = {
                 "General": {
@@ -146,10 +148,11 @@ IAT plugins
                 alert('Can\'t retrieve user information.');
             }
             console.log('Unable to build quiz with', context, elId);
-            // context.ui = 204;
+            // context.ui = 213;
             // context.ou = 7143;
             // context.taker_first = 'Oscar';
             // context.taker_last = 'Chang';
+            // context.assessmentId = 23;
             // q.onSetup(elId, context);
         };
 
@@ -220,6 +223,7 @@ IAT plugins
                 q.reviews = data.responseJSON.reviews;
             }
             q.enableAccessFeedbackButton();
+            q.editFeedbackButtonText(q.finishButtonText);
         };
 
         q.storeAssessmentData = function () {
@@ -232,6 +236,9 @@ IAT plugins
             if (v.currentContext.inClassList) {
                 if (q.manipulateAttempts) {
                     d.updateAttempt(v.currentContext.attempt_id, q.attemptData, q.updateAttemptCallback);
+                } else {
+                    q.enableAccessFeedbackButton();
+                    q.editFeedbackButtonText(q.finishButtonText);
                 }
                 if (percentage >= q.QuizData.General.percentage_to_pass) {
                     if (v.currentContext.awardId) {
@@ -242,6 +249,9 @@ IAT plugins
                         v.issueAward(null, temp);
                     }
                 }
+            } else {
+                q.enableAccessFeedbackButton();
+                q.editFeedbackButtonText(q.finishButtonText);
             }
         };
 
@@ -433,6 +443,12 @@ IAT plugins
             });
 
             buttonContainer.on('click', q.accessFeedbackButtonOnOK);
+        };
+
+        q.editFeedbackButtonText = function (text) {
+            var buttonContainer = $('.ILQ_GenericButtonContainer.Generic'),
+                temp = buttonContainer.html();
+            buttonContainer.html(temp.replace(new RegExp(q.waitFinishButtonText, 'g'), text));
         };
 
         q.onSelectChange = function () {

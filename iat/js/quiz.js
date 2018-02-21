@@ -2287,7 +2287,7 @@ InlineQuizApp.AssessFeedback = function() {
                 btnTxt = 'Reset Activity';
             } else {
                 buttonOptions.disabled = true;
-                btnTxt = 'Finish Activity';
+                btnTxt = InlineQuizApp.waitFinishButtonText ? InlineQuizApp.waitFinishButtonText : 'Finish Activity';
             }
         }
 
