@@ -308,7 +308,7 @@ InlineQuizApp.GoNextQuestion = function() {
         if (InlineQuizApp.QuizData.General.feedBackType === 'report') {
             InlineQuizApp.GenerateFullReport();
         } else {
-            if (InlineQuizApp.onNoFeedbackGoEndSlide !== null && InlineQuizApp.onNoFeedbackGoEndSlide.constructor === Function) {
+            if (InlineQuizApp.QuizData.General.feedBackType === 'none' && InlineQuizApp.onNoFeedbackGoEndSlide !== null && InlineQuizApp.onNoFeedbackGoEndSlide.constructor === Function) {
                 try {
                     InlineQuizApp.onNoFeedbackGoEndSlide(InlineQuizApp.goEndSlide);
                 } catch (err) {

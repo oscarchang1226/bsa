@@ -31,7 +31,7 @@ IAT plugins
                 "General": {
                     "QuizName": (data.assessment.name || "Assessment") + '<span></span>',
                     "CleanName": (data.assessment.name || "Assessment"),
-                    "feedBackType": (data.feedbackType || "continuous"),
+                    "feedBackType": (data.feedBackType || "continuous"),
                     "forceCorrect": false,
                     "repeatOnComplete": true,
                     "allowNone": false,
@@ -76,6 +76,11 @@ IAT plugins
             };
             if (data.assessment.name.toLowerCase().indexOf('quiz') > -1) {
                 result.General.preQuizText = "<p>Take a few minutes to self-test what you have just learned before the end of this course. At the end of each course, you'll take a Final Test that covers all the material in the course. You need a 90% to pass, so practicing now will help you succeed. This self-study quiz is NOT graded and feedback is given immediately to help you understand mistakes.</p>";
+            } else if (data.assessment.name.toLowerCase().indexOf('esd') > -1) {
+                result.General.preQuizText = '<p>';
+                result.General.preQuizText += '<br />This test consists of 24 multiple-choice questions. All questions are form the video: ESD Control (DVD-54C), which is available in the previous module. Each questions has only one <b>most</b> correct answer. Circle the letter corresponding to the your selection for each test item. You should read the question and all of the answers carefully before answering. <br />';
+                result.General.preQuizText += '<br />If two answers appear to be correct, pick the answer that seems to be the most correct response. The passing grade for this test is a <b>70%</b> (17 or more correct answers). If you did not pass you may retake this test to improve your score. Your test will be automatically graded and you will know your results immediately. <br />';
+                result.General.preQuizText += '<br /></p>';
             } else if (data.assessment.name.toLowerCase().indexOf('test') > -1) {
                 result.General.preQuizText = "<p>This is your Final Test for this course. Please make sure that you have reviewed the material in the videos and in the written portions of the course. Please also make sure that you have done the review quiz to practice the types of questions you may encounter in this Final Test.<br />";
                 result.General.preQuizText += "<br />You will need to get a <b>100%</b> score on this Test to pass and earn credit (and a badge) for completing the course. If you pass the Test in your first attempt, you will earn five (5) points and a badge. Each attempt after the first, will deducted one point from the possible five for passing. These points add up in the <strongSmith U Leaderboard</strong>, which is a company-wide leaderboard based on individuals and on offices.<br/>";
@@ -109,6 +114,7 @@ IAT plugins
             }
             if (!context.hasOwnProperty('assessmentId')) {
                 d2log('ERROR: Missing Org Unit and Assessment Id');
+                // q.onSetupPlanB(elId, context);
             } else {
                 if (c && c.user.Identifier) {
                     context.ui = c.user.Identifier;
@@ -154,6 +160,8 @@ IAT plugins
             // context.taker_first = 'Oscar';
             // context.taker_last = 'Chang';
             // context.assessmentId = 60;
+            // context.feedBackType = 'none';
+            // context.send_mail = 'oscarchang1226@gmail.com';
             // q.onSetup(elId, context);
         };
 
@@ -163,8 +171,8 @@ IAT plugins
                     v.currentContext.assessmentId = res.responseJSON.assessment.id;
                     if (document.getElementById(elId) !== null) {
                         q.containerRef = document.getElementById(elId);
-                        if (context.feedbackType) {
-                            res.responseJSON.feedbackType = context.feedbackType;
+                        if (context.feedBackType) {
+                            res.responseJSON.feedBackType = context.feedBackType;
                         }
                         q.QuizData = q.transformApiQuizData(res.responseJSON);
                         if (c.awardReceived) {
