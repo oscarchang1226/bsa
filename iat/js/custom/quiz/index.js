@@ -25,12 +25,13 @@ IAT plugins
         q.attemptData = { questions: {} };
         q.waitFinishButtonText = 'Please wait as we generate your result...';
         q.finishButtonText = 'Finish Activity';
+        q.onNoFeedbackGoEndSlideCallback = null;
         q.transformApiQuizData = function (data) {
             var result = {
                 "General": {
                     "QuizName": (data.assessment.name || "Assessment") + '<span></span>',
                     "CleanName": (data.assessment.name || "Assessment"),
-                    "feedBackType": "continuous",
+                    "feedBackType": (data.feedbackType || "continuous"),
                     "forceCorrect": false,
                     "repeatOnComplete": true,
                     "allowNone": false,
@@ -152,7 +153,7 @@ IAT plugins
             // context.ou = 7143;
             // context.taker_first = 'Oscar';
             // context.taker_last = 'Chang';
-            // context.assessmentId = 23;
+            // context.assessmentId = 60;
             // q.onSetup(elId, context);
         };
 
@@ -162,6 +163,9 @@ IAT plugins
                     v.currentContext.assessmentId = res.responseJSON.assessment.id;
                     if (document.getElementById(elId) !== null) {
                         q.containerRef = document.getElementById(elId);
+                        if (context.feedbackType) {
+                            res.responseJSON.feedbackType = context.feedbackType;
+                        }
                         q.QuizData = q.transformApiQuizData(res.responseJSON);
                         if (c.awardReceived) {
                             q.QuizData.Questions = [];
@@ -212,18 +216,27 @@ IAT plugins
         };
 
         q.onCheckAnswer = function (data) {
-            q.attemptData.questions[data.question.questionId] = {
-                score: data.qScore,
-                time: q.getTimeInSeconds()
-            };
+            if (q.attemptData.questions[data.question.questionId]) {
+                q.attemptData.questions[data.question.questionId].score = data.qScore;
+                q.attemptData.questions[data.question.questionId].time += q.getTimeInSeconds();
+            } else {
+                q.attemptData.questions[data.question.questionId] = {
+                    score: data.qScore,
+                    time: q.getTimeInSeconds()
+                };
+            }
         };
 
         q.updateAttemptCallback = function (data) {
             if (data.responseJSON.reviews) {
                 q.reviews = data.responseJSON.reviews;
             }
-            q.enableAccessFeedbackButton();
-            q.editFeedbackButtonText(q.finishButtonText);
+            if (q.QuizData.General.feedBackType === 'continuous') {
+                q.enableAccessFeedbackButton();
+                q.editFeedbackButtonText(q.finishButtonText);
+            } else {
+                q.onNoFeedbackGoEndSlideCallback();
+            }
         };
 
         q.storeAssessmentData = function () {
@@ -235,10 +248,17 @@ IAT plugins
             q.stopTimer();
             if (v.currentContext.inClassList) {
                 if (q.manipulateAttempts) {
+                    if (v.currentContext.send_mail) {
+                        q.attemptData.send_mail = v.currentContext.send_mail;
+                    }
                     d.updateAttempt(v.currentContext.attempt_id, q.attemptData, q.updateAttemptCallback);
                 } else {
-                    q.enableAccessFeedbackButton();
-                    q.editFeedbackButtonText(q.finishButtonText);
+                    if (q.QuizData.General.feedBackType === 'continuous') {
+                        q.enableAccessFeedbackButton();
+                        q.editFeedbackButtonText(q.finishButtonText);
+                    } else {
+                        q.onNoFeedbackGoEndSlideCallback();
+                    }
                 }
                 if (percentage >= q.QuizData.General.percentage_to_pass) {
                     if (v.currentContext.awardId) {
@@ -250,8 +270,12 @@ IAT plugins
                     }
                 }
             } else {
-                q.enableAccessFeedbackButton();
-                q.editFeedbackButtonText(q.finishButtonText);
+                if (q.QuizData.General.feedBackType === 'continuous') {
+                    q.enableAccessFeedbackButton();
+                    q.editFeedbackButtonText(q.finishButtonText);
+                } else {
+                    q.onNoFeedbackGoEndSlideCallback();
+                }
             }
         };
 
@@ -510,5 +534,28 @@ IAT plugins
                 $('#ILQ_quizNextBtn')[0].onkeypress = undefined;
             }
         };
+
+        q.onNoFeedbackGoEndSlide = function (callback) {
+            $('#ILQ_quizNextBtn').addClass('ILQ_BaseButtonDisabled');
+            $('#ILQ_quizNextBtn').attr('role', 'disabled');
+            $('#ILQ_quizNextBtn .ILQ_AccessOnly').css('display', 'inline');
+            $('#ILQ_quizNextBtn .ILQ_AccessOnly').attr('aria-hidden', 'false');
+            $('#ILQ_quizNextBtn')[0].onclick = undefined;
+            $('#ILQ_quizNextBtn')[0].onmouseover = undefined;
+            $('#ILQ_quizNextBtn')[0].onmouseout = undefined;
+            $('#ILQ_quizNextBtn')[0].onfocus = undefined;
+            $('#ILQ_quizNextBtn')[0].onblur = undefined;
+            $('#ILQ_quizNextBtn')[0].onkeypress = undefined;
+            q.editNextButtonText(q.waitFinishButtonText);
+            q.onNoFeedbackGoEndSlideCallback = callback;
+            q.storeAssessmentData();
+        };
+
+        q.editNextButtonText = function (text) {
+            var buttonLabelContainer = $('#ILQ_quizNextBtn .ILQ_BaseButtonLabel'),
+                temp = buttonLabelContainer.html();
+            buttonLabelContainer.html(temp.replace(new RegExp('Continue', 'g'), text));
+        };
+
     }
 }(jQuery, InlineQuizApp, CSVal, SMI, Smith));

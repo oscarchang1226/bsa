@@ -262,6 +262,23 @@ InlineQuizApp.RequestNextQuestion = function() {
             clearInterval(InlineQuizApp.textInterval);
         }
 
+        if (InlineQuizApp.onCheckAnswer !== null && InlineQuizApp.onCheckAnswer.constructor === Function) {
+            try {
+                qScore = InlineQuizApp.getQuestionScore()
+                maxScore = InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].maxScoreValue;
+                if (!InlineQuizApp.QuizData.General.allowPartial && qScore < maxScore) {
+                    qScore = 0;
+                }
+                InlineQuizApp.onCheckAnswer({
+                    question: InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion],
+                    qScore: qScore
+                });
+            } catch (err) {
+               d2log('onCheckAnswer Error!');
+               d2log(err);
+            }
+        }
+
         InlineQuizApp.currentQuestion++;
 
         if (InlineQuizApp.currentQuestion < InlineQuizApp.QuizData.General.showQuestions) {
@@ -291,7 +308,16 @@ InlineQuizApp.GoNextQuestion = function() {
         if (InlineQuizApp.QuizData.General.feedBackType === 'report') {
             InlineQuizApp.GenerateFullReport();
         } else {
-            InlineQuizApp.goEndSlide();
+            if (InlineQuizApp.onNoFeedbackGoEndSlide !== null && InlineQuizApp.onNoFeedbackGoEndSlide.constructor === Function) {
+                try {
+                    InlineQuizApp.onNoFeedbackGoEndSlide(InlineQuizApp.goEndSlide);
+                } catch (err) {
+                   d2log('onNoFeedbackGoEndSlide Error!');
+                   d2log(err);
+                }
+            } else {
+                InlineQuizApp.goEndSlide();
+            }
         }
     }
 }
@@ -1903,7 +1929,7 @@ InlineQuizApp.getQuestionScore = function(questionIndex) {
             theAnswer = InlineQuizApp.QuizData.Questions[questionIndex].answers[i].answerText.toLowerCase().replace(/ /g, '');
             condition = inputAnswer === theAnswer;
             if (!condition && StringSimilarity && InlineQuizApp.QuizData.Questions[questionIndex].questionType === 'Fill In The Blank') {
-                condition = StringSimilarity.compareTwoStrings(inputAnswer, theAnswer) >= 0.9;
+                condition = StringSimilarity.compareTwoStrings(inputAnswer, theAnswer) >= 0.85;
             }
             // If the user answer was the same as the correct answer
             if (condition) {
@@ -1918,7 +1944,7 @@ InlineQuizApp.getQuestionScore = function(questionIndex) {
                         theAnswer = InlineQuizApp.QuizData.Questions[questionIndex].answers[i].altAnswers[j].answerText.toLowerCase().replace(/ /g, '');
                         condition = inputAnswer === theAnswer;
                         if (!condition && StringSimilarity && InlineQuizApp.QuizData.Questions[questionIndex].questionType === 'Fill In The Blank') {
-                            condition = StringSimilarity.compareTwoStrings(inputAnswer, theAnswer) >= 0.9;
+                            condition = StringSimilarity.compareTwoStrings(inputAnswer, theAnswer) >= 0.85;
                         }
                         // If the user answer is the same as an alternate answer
                         if (condition) {
