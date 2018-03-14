@@ -28,23 +28,25 @@ IAT plugins
         q.onNoFeedbackGoEndSlideCallback = null;
         q.transformApiQuizData = function (data) {
             var result = {
-                "General": {
-                    "QuizName": (data.assessment.name || "Assessment") + '<span></span>',
-                    "CleanName": (data.assessment.name || "Assessment"),
-                    "feedBackType": (data.feedBackType || "continuous"),
-                    "forceCorrect": false,
-                    "repeatOnComplete": true,
-                    "allowNone": false,
-                    "allowPrevious": false,
-                    "showHints": false,
-                    "allowPartial": true,
-                    "randomize": true,
-                    "subtractWrong": true,
-                    "postQuizText": 'You have completed this assessment.',
-                    "timer": data.assessment.timer_in_minutes,
-                    "percentage_to_pass": data.assessment.percentage_to_pass
+                General: {
+                    QuizName: (data.assessment.name || "Assessment") + '<span></span>',
+                    CleanName: (data.assessment.name || "Assessment"),
+                    feedBackType: (data.feedBackType || "continuous"),
+                    forceCorrect: data.forceCorrect ? true : false,
+                    maxTries: isNaN(data.maxTries) ? 0 : Number(data.maxTries),
+                    tries: 0,
+                    repeatOnComplete: true,
+                    allowNone: false,
+                    allowPrevious: false,
+                    showHints: false,
+                    allowPartial: true,
+                    randomize: true,
+                    subtractWrong: true,
+                    postQuizText: 'You have completed this assessment.',
+                    timer: data.assessment.timer_in_minutes,
+                    percentage_to_pass: data.assessment.percentage_to_pass
                 },
-                'Questions': data.questions.map(function (q) {
+                Questions: data.questions.map(function (q) {
                     // Correct any flaws
                     var correctAnswers = q.answers.filter(function (a) {
                         return a.scoreValue;
@@ -118,7 +120,7 @@ IAT plugins
             }
             if (!context.hasOwnProperty('assessmentId')) {
                 d2log('ERROR: Missing Org Unit and Assessment Id');
-                // q.onSetupPlanB(elId, context);
+                q.onSetupPlanB(elId, context);
             } else {
                 if (c && c.user.Identifier) {
                     context.ui = c.user.Identifier;
@@ -165,8 +167,10 @@ IAT plugins
             // context.taker_last = 'Chang';
             // context.assessmentId = 60;
             // context.feedBackType = 'none';
+            // context.forceCorrect = true;
+            // context.maxTries = 3;
             // context.send_mail = 'oscarchang1226@gmail.com';
-            // q.onSetup(elId, context);
+            q.onSetup(elId, context);
         };
 
         q.onSetup = function (elId, context) {
@@ -177,6 +181,12 @@ IAT plugins
                         q.containerRef = document.getElementById(elId);
                         if (context.feedBackType) {
                             res.responseJSON.feedBackType = context.feedBackType;
+                        }
+                        if (context.forceCorrect) {
+                            res.responseJSON.forceCorrect = context.forceCorrect;
+                        }
+                        if (context.maxTries) {
+                            res.responseJSON.maxTries = context.maxTries;
                         }
                         q.QuizData = q.transformApiQuizData(res.responseJSON);
                         if (c.awardReceived) {
@@ -190,6 +200,22 @@ IAT plugins
                     }
                 });
             });
+        };
+
+        q.incrementTries = function () {
+            q.QuizData.General.tries += 1;
+        };
+
+        q.resetTries = function () {
+            q.QuizData.General.tries = 0;
+        };
+
+        q.noTriesLeft = function () {
+            return q.QuizData.General.maxTries > 0 && q.QuizData.General.tries === q.QuizData.General.maxTries;
+        };
+
+        q.forceCorrectAndMaxTriesApplied = function () {
+            return q.QuizData.General.forceCorrect && q.QuizData.General.maxTries;
         };
 
         q.onComplete = function (data) {
@@ -228,6 +254,10 @@ IAT plugins
         };
 
         q.onCheckAnswer = function (data) {
+            if (q.forceCorrectAndMaxTriesApplied()) {
+                q.incrementTries();
+            }
+
             if (q.attemptData.questions[data.question.questionId]) {
                 q.attemptData.questions[data.question.questionId].score = data.qScore;
                 q.attemptData.questions[data.question.questionId].time += q.getTimeInSeconds();
@@ -291,13 +321,26 @@ IAT plugins
             }
         };
 
-        q.postCheckAnswer = function () {
+        q.postCheckAnswer = function (nextQuestionFlag) {
             if (parent && $('#assessment-frame', parent.document)) {
                 $('#assessment-frame', parent.document).height($('body').height());
             }
 
-            if (q.currentQuestion === q.QuizData.General.showQuestions - 1) {
-                q.storeAssessmentData();
+            if (q.QuizData.General.forceCorrect) {
+                if (nextQuestionFlag) {
+                    q.currentQuestion += 1;
+
+                    if (q.currentQuestion < q.QuizData.General.showQuestions) {
+                        q.currentQuestionID = q.QuizData.Questions[q.currentQuestion].QuestionID;
+                    } else {
+                        q.storeAssessmentData();
+                    }
+                    q.GoNextQuestion();
+                }
+            } else {
+                if (q.currentQuestion === q.QuizData.General.showQuestions - 1) {
+                    q.storeAssessmentData();
+                }
             }
         };
 
@@ -482,9 +525,11 @@ IAT plugins
         };
 
         q.editFeedbackButtonText = function (text) {
-            var buttonContainer = $('.ILQ_GenericButtonContainer.Generic'),
-                temp = buttonContainer.html();
-            buttonContainer.html(temp.replace(new RegExp(q.waitFinishButtonText, 'g'), text));
+            if (!q.QuizData.General.forceCorrect) {
+                var buttonContainer = $('.ILQ_GenericButtonContainer.Generic'),
+                    temp = buttonContainer.html();
+                buttonContainer.html(temp.replace(new RegExp(q.waitFinishButtonText, 'g'), text));
+            }
         };
 
         q.onSelectChange = function () {

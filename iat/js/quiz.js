@@ -2178,6 +2178,13 @@ InlineQuizApp.AssessFeedback = function() {
                 question: InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion],
                 qScore: qScore
             });
+            if ((qScore >= maxScore && InlineQuizApp.QuizData.General.forceCorrect) || InlineQuizApp.noTriesLeft()) {
+                if (InlineQuizApp.postCheckAnswer && InlineQuizApp.postCheckAnswer.constructor === Function) {
+                    InlineQuizApp.resetTries();
+                    InlineQuizApp.postCheckAnswer(true);
+                }
+                return;
+            }
         } catch (err) {
            d2log('onCheckAnswer Error!');
            d2log(err);
@@ -2201,7 +2208,6 @@ InlineQuizApp.AssessFeedback = function() {
     ILQ_ContinuousResponseText.setAttribute('class', 'ILQ_ContinuousResponseText');
 
     if (InlineQuizApp.QuizData.General.forceCorrect === true) {
-        InlineQuizApp.BuildResponseText(ILQ_ContinuousResponseText, InlineQuizApp.currentQuestion);
 
         if (qScore >= maxScore) {
             InlineQuizApp.DisableButtons();
@@ -2251,11 +2257,14 @@ InlineQuizApp.AssessFeedback = function() {
             }, btnTxt, buttonOptions);
 
             ILQ_ContinuousResponseCont.appendChild(nextBtn);
+        } else {
+            InlineQuizApp.BuildResponseText(ILQ_ContinuousResponseText, InlineQuizApp.currentQuestion);
         }
 
         ILQ_ContinuousResponseCont.appendChild(ILQ_ContinuousResponseHeader);
         ILQ_ContinuousResponseCont.appendChild(ILQ_ContinuousResponseText);
     } else {
+
         InlineQuizApp.DisableButtons();
         $("#ILQ_buttonSet").hide(500);
 
