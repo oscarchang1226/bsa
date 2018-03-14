@@ -361,6 +361,7 @@ IAT plugins
 
         q.onStart = function () {
             delete q.reviews;
+            q.DisableButtons();
             if (v.currentContext.inClassList) {
                 if (q.manipulateAttempts) {
                     return d.storeAttempt({
