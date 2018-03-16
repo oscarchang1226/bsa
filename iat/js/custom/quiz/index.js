@@ -161,11 +161,11 @@ IAT plugins
                 alert('Can\'t retrieve user information.');
             }
             console.log('Unable to build quiz with', context, elId);
-            // context.ui = 213;
-            // context.ou = 7143;
+            context.ui = 213;
+            context.ou = 7143;
             // context.taker_first = 'Oscar';
             // context.taker_last = 'Chang';
-            // context.assessmentId = 60;
+            context.assessmentId = 43;
             // context.feedBackType = 'none';
             // context.forceCorrect = true;
             // context.maxTries = 3;
@@ -222,12 +222,12 @@ IAT plugins
             q.QuizData.General.postQuizText += '<p>You scored <strong>' + (data.scoreAchieved / data.scoreMax * 100).toFixed(2) + '%</strong> (' + data.scoreAchieved + ' out of ' + data.scoreMax + ').</p>';
             if (q.reviews && Object.keys(q.reviews).length > 0) {
                 q.QuizData.General.postQuizText += '<p><h4>Please review these topics: </h4><ul>';
-                Object.keys(q.reviews).forEach(function (key) {
-                    q.reviews[key].forEach(function (link) {
+                try {
+                    q.reviews.forEach(function (link) {
                         q.QuizData.General.postQuizText += '<li><a href="' + link.url + '" target="_blank">' + link.label + '</a></li>';
                     });
-                });
-                q.QuizData.General.postQuizText += '</ul></p>';
+                    q.QuizData.General.postQuizText += '</ul></p>';
+                } catch (ignore) {}
             }
         };
 
