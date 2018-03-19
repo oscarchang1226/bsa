@@ -22,19 +22,23 @@ JS File that provides utilities for Smith University
         buildUrl: function (url) {
             return this.path + url;
         },
-        call: function (settings) {
+        call: function (settings, skipToken) {
             var vm = this;
-            $.ajax({
-                method: 'POST',
-                url: vm.path + 'token',
-                dataType: 'json',
-                complete: function (res) {
-                    settings.headers = {
-                        Authorization: res.responseJSON.token_type + ' ' + res.responseJSON.access_token
-                    };
-                    $.ajax(settings);
-                }
-            });
+            if (skipToken) {
+                $.ajax(settings);
+            } else {
+                $.ajax({
+                    method: 'POST',
+                    url: vm.path + 'token',
+                    dataType: 'json',
+                    complete: function (res) {
+                        settings.headers = {
+                            Authorization: res.responseJSON.token_type + ' ' + res.responseJSON.access_token
+                        };
+                        $.ajax(settings);
+                    }
+                });
+            }
         },
         getLeaderboard: function (callback, errorCallback) {
             var settings = {
@@ -44,7 +48,7 @@ JS File that provides utilities for Smith University
                 error: errorCallback || console.error,
                 dataType: 'json'
             };
-            this.call(settings);
+            this.call(settings, true);
         },
         getAssessment: function (id, callback, errorCallback) {
             if (id) {
