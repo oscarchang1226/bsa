@@ -22,17 +22,21 @@ IAT plugins
          * Transform response data to quiz data
         **/
         q.manipulateAttempts = true;
-        q.attemptData = { questions: {} };
+        q.attemptData = { questions: {
+            timer_in_minutes: null
+          }
+        };
         q.waitFinishButtonText = 'Please wait as we generate your result...';
         q.finishButtonText = 'Finish Activity';
         q.onNoFeedbackGoEndSlideCallback = null;
         q.transformApiQuizData = function (data) {
+            data.assessment = data.assessment || {};
             var result = {
                 General: {
                     QuizName: (data.assessment.name || "Assessment") + '<span></span>',
                     CleanName: (data.assessment.name || "Assessment"),
                     feedBackType: (data.feedBackType || "continuous"),
-                    forceCorrect: data.forceCorrect ? true : false,
+                    forceCorrect: !!data.forceCorrect,
                     maxTries: isNaN(data.maxTries) ? 0 : Number(data.maxTries),
                     tries: 0,
                     repeatOnComplete: true,
@@ -122,6 +126,11 @@ IAT plugins
                 d2log('ERROR: Missing Org Unit and Assessment Id');
                 q.onSetupPlanB(elId, context);
             } else {
+                c.user = c.user || {
+                    Identifier: null,
+                  FirstName: null,
+                  LastName: null
+                };
                 if (c && c.user.Identifier) {
                     context.ui = c.user.Identifier;
                     context.taker_first = c.user.FirstName;
@@ -148,7 +157,7 @@ IAT plugins
                         } else {
                             q.onSetupPlanB(elId, context);
                         }
-                    }).fail(function () {
+                    }).catch(function () {
                         q.onSetupPlanB(elId, context);
                     });
                 }
@@ -176,6 +185,7 @@ IAT plugins
         q.onSetup = function (elId, context) {
             v.init(context, function (c) {
                 d.getAssessment(c.assessmentId, function (res) {
+                    res.responseJSON = res.responseJSON || {};
                     v.currentContext.assessmentId = res.responseJSON.assessment.id;
                     if (document.getElementById(elId) !== null) {
                         q.containerRef = document.getElementById(elId);
@@ -257,7 +267,7 @@ IAT plugins
             if (q.forceCorrectAndMaxTriesApplied()) {
                 q.incrementTries();
             }
-
+            data.question.questionId = data.question.questionId || null;
             if (q.attemptData.questions[data.question.questionId]) {
                 q.attemptData.questions[data.question.questionId].score = data.qScore;
                 q.attemptData.questions[data.question.questionId].time += q.getTimeInSeconds();
@@ -401,9 +411,10 @@ IAT plugins
 
         q.updateTimer = function (s) {
             if (q.QuizData.General.timer) {
+                var spanSelector = '#ILQ_header h1 span';
                 $('#ILQ_header h1').css({'position': 'relative'});
-                $('#ILQ_header h1 span').css({'position': 'absolute', 'right': '5pt'});
-                $('#ILQ_header h1 span').html(s || q.formatTimer(q.timer));
+                $(spanSelector).css({'position': 'absolute', 'right': '5pt'});
+                $(spanSelector).html(s || q.formatTimer(q.timer));
             }
         };
 
@@ -536,7 +547,9 @@ IAT plugins
         q.onSelectChange = function () {
             var elName = $(this).attr('name'),
                 temp = {},
-                k;
+                k,
+                buttonSelector = '#ILQ_quizNextBtn',
+                buttonAccessOnlySelector = buttonSelector + ' .ILQ_AccessOnly';
             if (!InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].OrderingAnswers) {
                 InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].OrderingAnswers = {};
             }
@@ -554,56 +567,58 @@ IAT plugins
             }
             InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].OrderingAnswers = temp;
             if (Object.keys(temp).length === InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].answers.length) {
-                $('#ILQ_quizNextBtn').removeClass('ILQ_BaseButtonDisabled');
-                $('#ILQ_quizNextBtn').attr('role', 'button');
-                $('#ILQ_quizNextBtn').removeAttr('disabled');
-                $('#ILQ_quizNextBtn').fadeIn(500);
-                $('#ILQ_quizNextBtn .ILQ_AccessOnly').css('display', 'none');
-                $('#ILQ_quizNextBtn .ILQ_AccessOnly').attr('aria-hidden', 'true');
-                $('#ILQ_quizNextBtn')[0].onclick = InlineQuizApp.RequestNextQuestion;
-                $('#ILQ_quizNextBtn')[0].onmouseover = function () {
+                $(buttonSelector).removeClass('ILQ_BaseButtonDisabled');
+                $(buttonSelector).attr('role', 'button');
+                $(buttonSelector).removeAttr('disabled');
+                $(buttonSelector).fadeIn(500);
+                $(buttonAccessOnlySelector).css('display', 'none');
+                $(buttonAccessOnlySelector).attr('aria-hidden', 'true');
+                $(buttonSelector)[0].onclick = InlineQuizApp.RequestNextQuestion;
+                $(buttonSelector)[0].onmouseover = function () {
                     $(this).addClass('over');
                 };
-                $('#ILQ_quizNextBtn')[0].onmouseout = function () {
+                $(buttonSelector)[0].onmouseout = function () {
                     $(this).removeClass('over');
                 };
-                $('#ILQ_quizNextBtn')[0].onfocus = function () {
+                $(buttonSelector)[0].onfocus = function () {
                     $(this).addClass('over');
                 };
-                $('#ILQ_quizNextBtn')[0].onblur = function () {
+                $(buttonSelector)[0].onblur = function () {
                     $(this).removeClass('over');
                 };
-                $('#ILQ_quizNextBtn')[0].onkeypress = function (e) {
+                $(buttonSelector)[0].onkeypress = function (e) {
                     if (e.keyCode === 13 || e.keyCode === 32) {
                         InlineQuizApp.RequestNextQuestion(e);
                     }
                 };
             } else {
-                $('#ILQ_quizNextBtn').addClass('ILQ_BaseButtonDisabled');
-                $('#ILQ_quizNextBtn').attr('role', 'disabled');
-                $('#ILQ_quizNextBtn').fadeOut(250);
-                $('#ILQ_quizNextBtn .ILQ_AccessOnly').css('display', 'inline');
-                $('#ILQ_quizNextBtn .ILQ_AccessOnly').attr('aria-hidden', 'false');
-                $('#ILQ_quizNextBtn')[0].onclick = undefined;
-                $('#ILQ_quizNextBtn')[0].onmouseover = undefined;
-                $('#ILQ_quizNextBtn')[0].onmouseout = undefined;
-                $('#ILQ_quizNextBtn')[0].onfocus = undefined;
-                $('#ILQ_quizNextBtn')[0].onblur = undefined;
-                $('#ILQ_quizNextBtn')[0].onkeypress = undefined;
+                $(buttonSelector).addClass('ILQ_BaseButtonDisabled');
+                $(buttonSelector).attr('role', 'disabled');
+                $(buttonSelector).fadeOut(250);
+                $(buttonAccessOnlySelector).css('display', 'inline');
+                $(buttonAccessOnlySelector).attr('aria-hidden', 'false');
+                $(buttonSelector)[0].onclick = undefined;
+                $(buttonSelector)[0].onmouseover = undefined;
+                $(buttonSelector)[0].onmouseout = undefined;
+                $(buttonSelector)[0].onfocus = undefined;
+                $(buttonSelector)[0].onblur = undefined;
+                $(buttonSelector)[0].onkeypress = undefined;
             }
         };
 
         q.onNoFeedbackGoEndSlide = function (callback) {
-            $('#ILQ_quizNextBtn').addClass('ILQ_BaseButtonDisabled');
-            $('#ILQ_quizNextBtn').attr('role', 'disabled');
-            $('#ILQ_quizNextBtn .ILQ_AccessOnly').css('display', 'inline');
-            $('#ILQ_quizNextBtn .ILQ_AccessOnly').attr('aria-hidden', 'false');
-            $('#ILQ_quizNextBtn')[0].onclick = undefined;
-            $('#ILQ_quizNextBtn')[0].onmouseover = undefined;
-            $('#ILQ_quizNextBtn')[0].onmouseout = undefined;
-            $('#ILQ_quizNextBtn')[0].onfocus = undefined;
-            $('#ILQ_quizNextBtn')[0].onblur = undefined;
-            $('#ILQ_quizNextBtn')[0].onkeypress = undefined;
+            var buttonSelector = '#ILQ_quizNextBtn',
+                buttonAccessOnlySelector = buttonSelector + ' .ILQ_AccessOnly';
+            $(buttonSelector).addClass('ILQ_BaseButtonDisabled');
+            $(buttonSelector).attr('role', 'disabled');
+            $(buttonAccessOnlySelector).css('display', 'inline');
+            $(buttonAccessOnlySelector).attr('aria-hidden', 'false');
+            $(buttonSelector)[0].onclick = undefined;
+            $(buttonSelector)[0].onmouseover = undefined;
+            $(buttonSelector)[0].onmouseout = undefined;
+            $(buttonSelector)[0].onfocus = undefined;
+            $(buttonSelector)[0].onblur = undefined;
+            $(buttonSelector)[0].onkeypress = undefined;
             q.editNextButtonText(q.waitFinishButtonText);
             q.onNoFeedbackGoEndSlideCallback = callback;
             q.storeAssessmentData();
