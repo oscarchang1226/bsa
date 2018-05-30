@@ -12,6 +12,7 @@ JS File that provides utilities for Smith University
     window.Smith = {
         isDev: true,
         path: '',
+        tn: null,
         init: function () {
             if (this.isDev) {
                 this.path = 'http://localhost:4040/api/';
@@ -26,14 +27,20 @@ JS File that provides utilities for Smith University
             var vm = this;
             if (skipToken) {
                 $.ajax(settings);
+            } else if (vm.tn) {
+                settings.headers = {
+                    Authorization: vm.tn
+                };
+                $.ajax(settings);
             } else {
                 $.ajax({
                     method: 'POST',
                     url: vm.path + 'token',
                     dataType: 'json',
                     complete: function (res) {
-                        settings.headers = {
-                            Authorization: res.responseJSON.token_type + ' ' + res.responseJSON.access_token
+                      vm.tn = res.responseJSON.token_type + ' ' + res.responseJSON.access_token;
+                      settings.headers = {
+                            Authorization: vm.tn
                         };
                         $.ajax(settings);
                     }
@@ -63,6 +70,22 @@ JS File that provides utilities for Smith University
             } else {
                 console.error('Getting Assessment requires the assessment id.');
             }
+        },
+        storeAttemptQuestion: function (data, callback, errorCallback) {
+            var settings = {
+                type: 'POST',
+                url: this.buildUrl('attemptQuestions'),
+                dataType: 'json',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                complete: callback,
+                error: errorCallback || console.error
+            };
+            this.call(settings);
         },
         /**
          * data {assessment_id, module_id, taker_id}

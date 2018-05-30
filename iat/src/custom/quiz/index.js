@@ -171,7 +171,7 @@ IAT plugins
             context.ou = 7143;
             // context.taker_first = 'Oscar';
             // context.taker_last = 'Chang';
-            context.assessmentId = 117;
+            context.assessmentId = 30;
             // context.feedBackType = 'none';
             // context.forceCorrect = true;
             // context.maxTries = 3;
@@ -229,7 +229,7 @@ IAT plugins
             var ungraded = q.getUngradedQuestions();
             q.QuizData.General.postQuizText += '<p>You scored <strong>' + (data.scoreAchieved / data.scoreMax * 100).toFixed(2) + '%</strong> (' + data.scoreAchieved + ' out of ' + data.scoreMax + ').</p>';
             if (ungraded.questions.length > 0) {
-                q.QuizData.General.postQuizText += '<p>Please note you have <b>' + ungraded.totalScore + '</b> ungraded points. You will receive email for updates.</p>';
+                q.QuizData.General.postQuizText += '<p>Please note <span style="color: green;">you have <b>' + ungraded.totalScore + '</b> ungraded points</span>. You will receive email for updates.</p>';
             }
             if (q.reviews && Object.keys(q.reviews).length > 0) {
                 q.QuizData.General.postQuizText += '<p><h4>Please review these topics: </h4><ul>';
@@ -292,6 +292,22 @@ IAT plugins
                     answer_text : data.answer_text
                 };
             }
+            q.storeQuestionAttemptData(
+                data.question,
+                q.attemptData.questions[data.question.questionId]
+            );
+        };
+
+        q.storeQuestionAttemptData = function (question, questionData = {}) {
+            if (v.currentContext.attempt_id && questionData && questionData.time) {
+                questionData.attempt_id = v.currentContext.attempt_id;
+                questionData.question_id = question.questionId;
+                d.storeAttemptQuestion(questionData);
+            }
+        };
+
+        q.getCurrentQuestion = function () {
+          return q.QuizData.Questions[q.currentQuestion];
         };
 
         q.updateAttemptCallback = function (data) {
