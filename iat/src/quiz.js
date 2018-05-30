@@ -550,10 +550,12 @@ InlineQuizApp.GenerateMiniReport = function(questionIndex, includeQuestion) {
         cont += '';
     }
 
-    if (crta.length > 1) {
+    if (InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].questionType !== 'Writing') {
+      if (crta.length > 1) {
         cont += '<p class="ILQ_miniReportHeader" ><strong>Correct Answers:</strong> ';
-    } else {
+      } else {
         cont += '<p class="ILQ_miniReportHeader" ><strong>Correct Answer:</strong> ';
+      }
     }
 
     if (InlineQuizApp.QuizData.Questions[questionIndex].questionType === 'Fill In The Blank' || InlineQuizApp.QuizData.Questions[questionIndex].questionType === 'Math') {
@@ -740,26 +742,31 @@ InlineQuizApp.BuildResponseText = function(containerRef, questionIndex) {
     RespImg.setAttribute('class', 'ILQ_RecapResponseGraphic');
     var RespCntx = document.createElement('strong');
 
+    if (InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].questionType === 'Writing') {
+      RespImg.setAttribute('src', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAMAAADXqc3KAAAAS1BMVEUAAADsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQAXPjsCAAAAGHRSTlMAAxAUKCktL0ZOZ2xwgoSls8PHyeLv+PsorBT5AAAAoklEQVQoz3XSSxaDIBBE0YpCjB8MqOjb/0oziCIJWsMLp4FupG+sCxFicFZ5jCfFm9O7lSxrd/jIX8Z9P0U6STJrubAaSb7gDbxkC3+3gJUr/KEZnELp6iEolq4Goi5cNaALVwX8lNpdT4j54YdrgJBdN7kmcOcDT38BNrXk9HoBn5qY+bw3UR2wtanOcrR9H9TcN3X1HKZsUPejvf8MV9/nA0HMIXW5zA5eAAAAAElFTkSuQmCC');
+      RespImg.setAttribute('alt', 'Answer submitted');
+      RespCntx.innerHTML = 'Your answer has been submitted for review. You will receive an email for updates.';
+    } else {
+      qScore = InlineQuizApp.getQuestionScore(questionIndex);
+      maxScore = InlineQuizApp.QuizData.Questions[questionIndex].maxScoreValue;
 
-    qScore = InlineQuizApp.getQuestionScore(questionIndex);
-    maxScore = InlineQuizApp.QuizData.Questions[questionIndex].maxScoreValue;
-
-    if (!InlineQuizApp.QuizData.General.allowPartial && qScore < maxScore) {
+      if (!InlineQuizApp.QuizData.General.allowPartial && qScore < maxScore) {
         qScore = 0;
-    }
+      }
 
-    if (qScore >= maxScore) {
+      if (qScore >= maxScore) {
         RespImg.setAttribute('src', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAMAAADXqc3KAAAAaVBMVEUAAAD///8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE8AtE/Gi+VPAAAAInRSTlMAAAMGCg8VGxwkRk5bYWl4f4CIpbK6vsjJy9HT3OPk9vr9CZah7wAAAI1JREFUKM+V0ssSwiAMheF4q1Cq1Xq3SPF//4d0IXacEmY0K/KdTSZBZoWSYqBV14nuoCZ7gF3uLQCHks+nvgXguPjVNwCcMm+eAOflp210dzG69AC4rkaH6HKXG0CspY4A99Gl6gGGdgDoq69R3gmZixif3K8n46fEm2xxJgAPo5zABoJVj2Yvmf/9S17ioBIDP/nF2AAAAABJRU5ErkJggg==');
         RespImg.setAttribute('alt', 'Right Answer');
         RespCntx.innerHTML = 'Your answer was correct. You scored ' + qScore + ' of a possible ' + maxScore + ' on this question.';
-    } else if (qScore === 0) {
+      } else if (qScore === 0) {
         RespImg.setAttribute('src', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYBAMAAAASWSDLAAAAFVBMVEUAAADsAETsAETsAETsAETsAETsAESbXnh7AAAABnRSTlMAHDfN3PHYCvCAAAAAaklEQVQY02NgUBZgAANGIwYGpjBHCEckVYFBNS0FLMXolhbEYJaWBpYSSUtLBhEgKaAEUBBCwsTAFFQIIgWVgEhBJSBSMAmwFEwCIgWTQOUgK0MxANloFEuRnYPiUBQvoHgOxdsoAYIcVACPxDI1J3AY4QAAAABJRU5ErkJggg==');
         RespImg.setAttribute('alt', 'Wrong Answer');
         RespCntx.innerHTML = 'Your answer was not correct. You scored ' + qScore + ' of a possible ' + maxScore + ' on this question.';
-    } else if (InlineQuizApp.QuizData.General.allowPartial) {
+      } else if (InlineQuizApp.QuizData.General.allowPartial) {
         RespImg.setAttribute('src', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAMAAADXqc3KAAAAS1BMVEUAAADsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQDsqQAXPjsCAAAAGHRSTlMAAxAUKCktL0ZOZ2xwgoSls8PHyeLv+PsorBT5AAAAoklEQVQoz3XSSxaDIBBE0YpCjB8MqOjb/0oziCIJWsMLp4FupG+sCxFicFZ5jCfFm9O7lSxrd/jIX8Z9P0U6STJrubAaSb7gDbxkC3+3gJUr/KEZnELp6iEolq4Goi5cNaALVwX8lNpdT4j54YdrgJBdN7kmcOcDT38BNrXk9HoBn5qY+bw3UR2wtanOcrR9H9TcN3X1HKZsUPejvf8MV9/nA0HMIXW5zA5eAAAAAElFTkSuQmCC');
         RespImg.setAttribute('alt', 'Partially Correct Answer');
         RespCntx.innerHTML = 'Your answer was partially correct. You scored ' + qScore + ' of a possible ' + maxScore + ' on this question.';
+      }
     }
 
     ILQ_RecapResponseText.appendChild(RespImg);
@@ -1375,6 +1382,10 @@ InlineQuizApp.setQuestionSlide = function(data, options) {
         case 'Ordering':
             ILQ_container.setAttribute('class', 'or');
             break;
+
+        case 'Writing':
+            ILQ_container.setAttribute('class', 'wr');
+            break;
     }
 
     ILQ_container.setAttribute('class', ILQ_container.getAttribute('class') + ' ' + InlineQuizApp.QuizData.General.feedBackType);
@@ -1569,6 +1580,14 @@ InlineQuizApp.setQuestionSlide = function(data, options) {
 
         for (answerSlotIndex = 0; answerSlotIndex < answerSlots.length; answerSlotIndex++) {
             ILQ_quizField.appendChild(answerSlots[answerSlotIndex]);
+        }
+        if (data.questionType === 'Writing') {
+            var textarea = document.createElement('textarea');
+            textarea.setAttribute('name', 'writingAnswer');
+            if (InlineQuizApp.onTextAreaChange !== void(0) && InlineQuizApp.onTextAreaChange.constructor === Function) {
+                textarea.oninput = InlineQuizApp.onTextAreaChange;
+            }
+            ILQ_quizField.appendChild(textarea);
         }
     }
 
@@ -2004,6 +2023,8 @@ InlineQuizApp.getQuestionScore = function(questionIndex) {
         } else {
             return 0;
         }
+    } else if (InlineQuizApp.QuizData.Questions[questionIndex].questionType === 'Writing') {
+        return 0;
     } else {
         ca = InlineQuizApp.QuizData.Questions[questionIndex].ChosenAnswers;
         aa = InlineQuizApp.QuizData.Questions[questionIndex].answers;
@@ -2127,8 +2148,9 @@ InlineQuizApp.DisableButtons = function() {
  */
 InlineQuizApp.saveTextInput = function() {
     InlineQuizApp.inputText = [];
-
-    if (InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].questionType === 'Fill In The Blank') {
+    var currentQuestion = InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion],
+        questionType = currentQuestion.questionType;
+    if (questionType === 'Fill In The Blank') {
         for (i = 1; i <= InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].answers.length; i++) {
             qAnswer = document.getElementById('blank' + i).value;
             qAnswer = qAnswer.replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -2138,7 +2160,7 @@ InlineQuizApp.saveTextInput = function() {
         }
 
         InlineQuizApp.savedText.splice(InlineQuizApp.currentQuestion, 1, InlineQuizApp.inputText);
-    } else if (InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].questionType === 'Math') {
+    } else if (questionType === 'Math') {
         for (i = 1; i <= InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion].answers.length; i++) {
             qAnswer = document.getElementById('number' + i).value;
             numAnswer = qAnswer.toString();
@@ -2147,6 +2169,40 @@ InlineQuizApp.saveTextInput = function() {
         }
 
         InlineQuizApp.savedText.splice(InlineQuizApp.currentQuestion, 1, InlineQuizApp.inputText);
+    } else if (questionType === 'Writing') {
+        qAnswer = document.getElementsByName('writingAnswer');
+        if (qAnswer.length > 0) {
+            var qAnswerText = qAnswer[0].value;
+            InlineQuizApp.savedText.splice(InlineQuizApp.currentQuestion, 1, qAnswerText.toString().trim());
+        }
+    } else if (questionType === 'Multiple Choice') {
+        qAnswer = document.querySelector('[aria-checked=true] .ILQ_answerLabel').lastChild.data;
+        InlineQuizApp.savedText.splice(InlineQuizApp.currentQuestion, 1, qAnswer);
+    } else if (questionType === 'All That Apply') {
+        qAnswer = document.querySelectorAll('[aria-checked=true] .ILQ_answerLabel');
+        var text = '';
+        qAnswer.forEach(function (node) {
+            answer = node.lastChild.data;
+            if (text.length > 0) {
+                text += "\n" + answer;
+            } else {
+                text = answer;
+            }
+        });
+        InlineQuizApp.savedText.splice(InlineQuizApp.currentQuestion, 1, text);
+    } else if (questionType === 'Ordering') {
+        qAnswer = document.querySelectorAll('.ILQ_quizField .ILQ_AnswerSlot');
+        text = '';
+        qAnswer.forEach(function(node) {
+           var index = node.querySelector('select').value,
+                temp = index + ' ' + node.querySelector('.ILQ_answerLabel').lastChild.data;
+          if (text.length > 0) {
+            text += "\n" + temp;
+          } else {
+            text = temp;
+          }
+        });
+        InlineQuizApp.savedText.splice(InlineQuizApp.currentQuestion, 1, text);
     }
 }
 
@@ -2176,7 +2232,8 @@ InlineQuizApp.AssessFeedback = function() {
         try {
             InlineQuizApp.onCheckAnswer({
                 question: InlineQuizApp.QuizData.Questions[InlineQuizApp.currentQuestion],
-                qScore: qScore
+                qScore: qScore,
+                answer_text: InlineQuizApp.savedText[InlineQuizApp.currentQuestion]
             });
             if ((qScore >= maxScore && InlineQuizApp.QuizData.General.forceCorrect) || InlineQuizApp.noTriesLeft()) {
                 if (InlineQuizApp.postCheckAnswer && InlineQuizApp.postCheckAnswer.constructor === Function) {

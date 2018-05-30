@@ -1,5 +1,5 @@
 /*
- * Smith and Associates package, js api.
+ * Smith and Associates package, src api.
  *
  * Copyright (c) 2017 N.F. Smith & Associates
  *

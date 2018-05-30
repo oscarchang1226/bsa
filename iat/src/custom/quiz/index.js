@@ -22,10 +22,7 @@ IAT plugins
          * Transform response data to quiz data
         **/
         q.manipulateAttempts = true;
-        q.attemptData = { questions: {
-            timer_in_minutes: null
-          }
-        };
+        q.attemptData = { questions: {}};
         q.waitFinishButtonText = 'Please wait as we generate your result...';
         q.finishButtonText = 'Finish Activity';
         q.onNoFeedbackGoEndSlideCallback = null;
@@ -174,7 +171,7 @@ IAT plugins
             context.ou = 7143;
             // context.taker_first = 'Oscar';
             // context.taker_last = 'Chang';
-            context.assessmentId = 43;
+            context.assessmentId = 117;
             // context.feedBackType = 'none';
             // context.forceCorrect = true;
             // context.maxTries = 3;
@@ -229,7 +226,11 @@ IAT plugins
         };
 
         q.onComplete = function (data) {
+            var ungraded = q.getUngradedQuestions();
             q.QuizData.General.postQuizText += '<p>You scored <strong>' + (data.scoreAchieved / data.scoreMax * 100).toFixed(2) + '%</strong> (' + data.scoreAchieved + ' out of ' + data.scoreMax + ').</p>';
+            if (ungraded.questions.length > 0) {
+                q.QuizData.General.postQuizText += '<p>Please note you have <b>' + ungraded.totalScore + '</b> ungraded points. You will receive email for updates.</p>';
+            }
             if (q.reviews && Object.keys(q.reviews).length > 0) {
                 q.QuizData.General.postQuizText += '<p><h4>Please review these topics: </h4><ul>';
                 try {
@@ -239,6 +240,18 @@ IAT plugins
                     q.QuizData.General.postQuizText += '</ul></p>';
                 } catch (ignore) {}
             }
+        };
+
+        q.getUngradedQuestions = function () {
+            var questions = q.QuizData.Questions.filter(function(question) {
+                    return question.questionType === 'Writing';
+            });
+            return {
+                questions,
+                totalScore: questions.reduce(function (acc, question) {
+                    return acc + question.maxScoreValue;
+                }, 0)
+            };
         };
 
         q.onPostComplete = function () {
@@ -271,10 +284,12 @@ IAT plugins
             if (q.attemptData.questions[data.question.questionId]) {
                 q.attemptData.questions[data.question.questionId].score = data.qScore;
                 q.attemptData.questions[data.question.questionId].time += q.getTimeInSeconds();
+                q.attemptData.questions[data.question.questionId].answerText = data.answer_text;
             } else {
                 q.attemptData.questions[data.question.questionId] = {
                     score: data.qScore,
-                    time: q.getTimeInSeconds()
+                    time: q.getTimeInSeconds(),
+                    answer_text : data.answer_text
                 };
             }
         };
@@ -622,6 +637,50 @@ IAT plugins
             q.editNextButtonText(q.waitFinishButtonText);
             q.onNoFeedbackGoEndSlideCallback = callback;
             q.storeAssessmentData();
+        };
+
+        q.onTextAreaChange = function () {
+            var answer = $(this).val(),
+                buttonSelector = '#ILQ_quizNextBtn',
+                buttonAccessOnlySelector = buttonSelector + ' .ILQ_AccessOnly';
+            if (answer.length > 0) {
+              $(buttonSelector).removeClass('ILQ_BaseButtonDisabled');
+              $(buttonSelector).attr('role', 'button');
+              $(buttonSelector).removeAttr('disabled');
+              $(buttonSelector).fadeIn(500);
+              $(buttonAccessOnlySelector).css('display', 'none');
+              $(buttonAccessOnlySelector).attr('aria-hidden', 'true');
+              $(buttonSelector)[0].onclick = InlineQuizApp.RequestNextQuestion;
+              $(buttonSelector)[0].onmouseover = function () {
+                $(this).addClass('over');
+              };
+              $(buttonSelector)[0].onmouseout = function () {
+                $(this).removeClass('over');
+              };
+              $(buttonSelector)[0].onfocus = function () {
+                $(this).addClass('over');
+              };
+              $(buttonSelector)[0].onblur = function () {
+                $(this).removeClass('over');
+              };
+              $(buttonSelector)[0].onkeypress = function (e) {
+                if (e.keyCode === 13 || e.keyCode === 32) {
+                  InlineQuizApp.RequestNextQuestion(e);
+                }
+              };
+            } else {
+              $(buttonSelector).addClass('ILQ_BaseButtonDisabled');
+              $(buttonSelector).attr('role', 'disabled');
+              $(buttonSelector).fadeOut(250);
+              $(buttonAccessOnlySelector).css('display', 'inline');
+              $(buttonAccessOnlySelector).attr('aria-hidden', 'false');
+              $(buttonSelector)[0].onclick = undefined;
+              $(buttonSelector)[0].onmouseover = undefined;
+              $(buttonSelector)[0].onmouseout = undefined;
+              $(buttonSelector)[0].onfocus = undefined;
+              $(buttonSelector)[0].onblur = undefined;
+              $(buttonSelector)[0].onkeypress = undefined;
+            }
         };
 
         q.editNextButtonText = function (text) {
