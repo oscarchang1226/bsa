@@ -77,35 +77,12 @@ IAT plugins
                     return q;
                 })
             };
-            if (data.assessment.name.toLowerCase().indexOf('quiz') > -1) {
-                result.General.preQuizText = "<p>Take a few minutes to self-test what you have just learned before the end of this course. At the end of each course, you'll take a Final Test that covers all the material in the course. You need a 90% to pass, so practicing now will help you succeed. This self-study quiz is NOT graded and feedback is given immediately to help you understand mistakes.</p>";
-            } else if (data.assessment.name.toLowerCase().indexOf('esd') > -1) {
-                result.General.preQuizText = '<p>';
-                result.General.preQuizText += '<br />This test consists of 24 multiple-choice questions. All questions are form the video: ESD Control (DVD-54C), which is available in the previous module. Each questions has only one <b>most</b> correct answer. Circle the letter corresponding to the your selection for each test item. You should read the question and all of the answers carefully before answering. <br />';
-                result.General.preQuizText += '<br />If two answers appear to be correct, pick the answer that seems to be the most correct response. The passing grade for this test is a <b>70%</b> (17 or more correct answers). If you did not pass you may retake this test to improve your score. Your test will be automatically graded and you will know your results immediately. <br />';
-                result.General.preQuizText += '<br /></p>';
-                if (data.assessment.percentage_to_pass) {
-                    result.General.preQuizText = result.General.preQuizText.replace('70%', data.assessment.percentage_to_pass + '%');
-                }
-                delete result.General.repeatOnComplete;
-            } else if (data.assessment.name.toLowerCase().indexOf('test') > -1) {
-                result.General.preQuizText = "<p>This is your Final Test for this course. Please make sure that you have reviewed the material in the videos and in the written portions of the course. Please also make sure that you have done the review quiz to practice the types of questions you may encounter in this Final Test.<br />";
-                result.General.preQuizText += "<br />You will need to get a <b>100%</b> score on this Test to pass and earn credit (and a badge) for completing the course. If you pass the Test in your first attempt, you will earn five (5) points and a badge. Each attempt after the first, will deducted one point from the possible five for passing. These points add up in the <strongSmith U Leaderboard</strong>, which is a company-wide leaderboard based on individuals and on offices.<br/>";
-                result.General.preQuizText += "<br />After you have passed all of the Tests for all of the graded courses in a series, you will take the Final Exam for the entire series. The Final Exam for this series is TR109: Final Exam.<br />";
-                result.General.preQuizText += "<br />Good luck!</p>";
-                if (data.assessment.percentage_to_pass) {
-                    result.General.preQuizText = result.General.preQuizText.replace('100%', data.assessment.percentage_to_pass + '%');
-                }
-                delete result.General.repeatOnComplete;
-            } else if (data.assessment.name.toLowerCase().indexOf('exam') > -1) {
-                result.General.preQuizText = '<p>';
-                result.General.preQuizText = 'This is your Final Exam for this series. Please make sure that you have done the review quizzes to practice the types of questions you may encounter! You must have a <b>85%</b> to pass the Exam and earn the Certificate, but you can attempt it multiple times (with point deductions).';
-                result.General.preQuizText += '</p>';
-                if (data.assessment.percentage_to_pass) {
-                    result.General.preQuizText = result.General.preQuizText.replace('85%', data.assessment.percentage_to_pass + '%');
-                }
-                delete result.General.repeatOnComplete;
+
+            if (!data.assessment.repeat_on_complete) {
+              delete result.General.repeatOnComplete;
             }
+
+            result.General.preQuizText = data.assessment.description;
 
             result.General.preQuizText += '<p>Press Start Activity to begin the assessment.</p>';
             return result;
@@ -167,16 +144,16 @@ IAT plugins
                 alert('Can\'t retrieve user information.');
             }
             console.log('Unable to build quiz with', context, elId);
-            context.ui = 213;
-            context.ou = 7143;
+            // context.ui = 213;
+            // context.ou = 7143;
             // context.taker_first = 'Oscar';
             // context.taker_last = 'Chang';
-            context.assessmentId = 30;
+            // context.assessmentId = 30;
             // context.feedBackType = 'none';
             // context.forceCorrect = true;
             // context.maxTries = 3;
             // context.send_mail = 'oscarchang1226@gmail.com';
-            q.onSetup(elId, context);
+            // q.onSetup(elId, context);
         };
 
         q.onSetup = function (elId, context) {
